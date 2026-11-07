@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XMART GO 線上購物（示範）</title>
+<style>
+  :root { --bg: #f6f7f9; --card: #fff; --text: #1b1f24; --muted: #6b7280; --line: #e5e7eb; --brand: #0f766e; --maju: #e11d48; --maju-soft: #fff1f2; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif; background: var(--bg); color: var(--text); }
+  header { background: #fff; border-bottom: 1px solid var(--line); }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+  header .wrap { display: flex; align-items: center; justify-content: space-between; height: 60px; gap: 12px; }
+  .logo { font-weight: 800; font-size: 20px; color: var(--brand); letter-spacing: .5px; white-space: nowrap; }
+  .note { font-size: 12px; color: var(--muted); text-align: right; }
+  h1 { font-size: 22px; margin: 28px 0 6px; }
+  .sub { color: var(--muted); margin: 0 0 20px; font-size: 14px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; padding-bottom: 48px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; }
+  .card img { width: 100%; aspect-ratio: 1; object-fit: cover; background: #e5e7eb; }
+  .body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .brand { font-size: 12px; color: var(--muted); }
+  .name { font-weight: 700; font-size: 16px; }
+  .spec { font-size: 13px; color: var(--muted); }
+  .price { font-size: 22px; font-weight: 800; margin-top: 4px; }
+  .price small { font-size: 13px; font-weight: 500; color: var(--muted); margin-left: 6px; }
+  .actions { display: grid; gap: 8px; margin-top: auto; padding-top: 10px; }
+  .btn { border: 0; border-radius: 10px; padding: 11px 12px; font-size: 14px; font-weight: 700; cursor: pointer; text-align: center; text-decoration: none; display: block; font-family: inherit; }
+  .btn-primary { background: var(--brand); color: #fff; }
+  .btn-maju { background: var(--maju-soft); color: var(--maju); border: 1px solid #fecdd3; }
+  .btn-maju b { display: block; font-size: 12px; font-weight: 500; opacity: .85; margin-top: 2px; }
+  .tag { display: inline-block; font-size: 11px; background: #ecfeff; color: #0e7490; border-radius: 999px; padding: 2px 8px; }
+  .loading { color: var(--muted); padding: 40px 0; }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="logo">XMART GO</div>
+    <div class="note">合作電商模擬頁：顧客選「MAJU 分期付款」後跳轉 MAJU，<br>由 MAJU 即時透過 API 取回商品資料並依會員資格計價</div>
+  </div>
+</header>
+
+<main class="wrap">
+  <h1>精選商品</h1>
+  <p class="sub">此處顯示的是商品原價。MAJU 售價會依會員類型（一般 VIP 原價區間倍率／鑽石卡 ×1.05）在 MAJU 確認頁即時計算。</p>
+  <div id="grid" class="grid"><div class="loading">讀取商品中…</div></div>
+</main>
+
+<script>
+  const MERCHANT_ID = 'xmart_go';          // 合作電商在 MAJU 的商家代號
+  const MAJU_CHECKOUT = '/maju/checkout';  // 正式環境為 MAJU 的網址，例如 https://pay.maju.tw/checkout
+  const fmt = (n) => 'NT$ ' + Number(n).toLocaleString('zh-TW');
+
+  function majuLink(productId) {
+    return `${MAJU_CHECKOUT}?${new URLSearchParams({ merchant: MERCHANT_ID, product_id: productId })}`;
+  }
+
+  async function load() {
+    const products = await (await fetch('/partner-api/products')).json();
+    const grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    for (const p of products) {
+      const el = document.createElement('article');
+      el.className = 'card';
+      el.innerHTML = `
+        <img src="${p.image}" alt="">
+        <div class="body">
+          <div class="brand">${p.brand} <span class="tag">庫存 ${p.stock}</span></div>
+          <div class="name">${p.name}</div>
+          <div class="spec">${p.spec}</div>
+          <div class="price">${fmt(p.price)}<small>原價・一次付清</small></div>
+          <div class="actions">
+            <button class="btn btn-primary" type="button" onclick="alert('這裡走 XMART GO 自己的結帳流程')">立即購買</button>
+            <a class="btn btn-maju" href="${majuLink(p.id)}">MAJU 分期付款<b>0 利率・最多 12 期・免信用卡</b></a>
+          </div>
+        </div>`;
+      grid.appendChild(el);
+    }
+  }
+  load().catch((e) => { document.getElementById('grid').innerHTML = '<div class="loading">讀取失敗：' + e.message + '</div>'; });
+</script>
+</body>
+</html>
