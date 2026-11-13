@@ -352,7 +352,7 @@
     paymentDueDay: 25,         // 每月繳款截止日（沿用 V2.6：10 日出帳、25 日截止）
     diamondRatePct: 105,       // 鑽石卡：原價 × 1.05
     vipRatePctOver50999: null, // 原價超過 50,999 的倍率（百分比）；null = 沿用每千元 +1%
-    overLimitMaxExtra: 10000,  // 人工審核：最多可比等級額度多出的金額
+    overLimitMultiple: 1,      // 人工審核的臨時額度上限 = 等級額度 × 幾倍。1 = 多一倍，帳款最高到等級額度的兩倍
     overLimitMinPaidPeriods: 1, // 人工審核：至少完成幾期繳款才可申請
     overdueLockDays: 7,        // 逾期達幾天：暫停新消費、一般 VIP 降一級（2026-11-13 定案）
     overdueLegalDays: 30,      // 逾期達幾天：停止所有交易並進入法律程序（2026-11-13 定案為一個月）
@@ -424,8 +424,8 @@
 
   // ==========================================================================
   // 額度：可用額度 = 等級額度（鑽石卡為已入帳保證金）− 未償還帳款 − 保留額度，最低為 0。
-  // 人工審核多給的部分不另外記帳：帳款高於等級額度時可用額度就是 0，
-  // 要繳到等級額度以內才會恢復。
+  // 人工審核給的是臨時額度，不另外記帳也不能循環：帳款高於等級額度時可用額度就是 0，
+  // 繳款先還這一段，繳到等級額度以內之後，才恢復為「繳多少、恢復多少」的可循環額度。
   // ==========================================================================
   function creditOf(member) {
     const baseLimit = member.type === 'diamond' ? member.deposit : VIP_LEVELS[member.level].limit;
@@ -516,10 +516,19 @@
   // ==========================================================================
   // 額度不足時：一般 VIP 可針對單筆訂單申請人工審核
   // ==========================================================================
+  // 做法參考信用卡的臨時額度：只給這一筆消費用、不能循環。
+  //   信用卡：超過永久額度的部分全數列入當期最低應繳，下一期要一次繳清。
+  //   MAJU ：超過等級額度的部分每月至少繳最低應繳，繳到等級額度以內為止；
+  //          這段期間繳款不恢復可用額度、也不能再消費，之後才回到可循環的等級額度。
+  const maxExtraOf = (credit) => credit.baseLimit * SETTINGS.overLimitMultiple;
+  const multipleLabel = () => (SETTINGS.overLimitMultiple === 1 ? '一倍' : ' ' + SETTINGS.overLimitMultiple + ' 倍');
+  const payoffMonthsOf = (extra) => Math.ceil(Math.max(0, extra) / SETTINGS.minMonthlyPayment);
+
   function overLimitOf(member, credit, majuPrice, st) {
     const shortfall = majuPrice - credit.available;
-    const extra = member.outstanding + member.reserved + majuPrice - credit.baseLimit; // 成立後會比等級額度多出多少
-    const base = { extra, maxExtra: SETTINGS.overLimitMaxExtra };
+    const extra = member.outstanding + member.reserved + majuPrice - credit.baseLimit; // 成立後會比等級額度多出多少（臨時額度）
+    const maxExtra = maxExtraOf(credit);
+    const base = { extra, maxExtra, payoffMonths: payoffMonthsOf(extra) };
     if (member.type === 'diamond') {
       return { ...base, canApply: false, message: `鑽石卡額度依保證金計算，請先追加保證金至少 ${nt(shortfall)}，入帳後再進行交易。` };
     }
@@ -527,17 +536,17 @@
       return { ...base, canApply: false, message: '帳款逾期中，繳清逾期款項後才能申請人工審核。' };
     }
     if (credit.overBy > 0) {
-      // 已經用過人工審核的超額：多給的部分沒還完之前，連小額也不能再買
-      return { ...base, canApply: false, message: `目前帳款已高於等級額度 ${nt(credit.overBy)}。要先把帳款繳到等級額度以內，才能再消費。` };
+      // 臨時額度還沒還清之前，連小額也不能再買
+      return { ...base, canApply: false, message: `您還有臨時額度 ${nt(credit.overBy)} 沒有還清。要先把帳款繳到等級額度以內，才能再消費。` };
     }
     if ((member.paidPeriods || 0) < SETTINGS.overLimitMinPaidPeriods) {
       return { ...base, canApply: false, message: `您還沒有繳款紀錄。完成至少 ${SETTINGS.overLimitMinPaidPeriods} 期繳款後，才能申請人工審核。` };
     }
-    if (extra > SETTINGS.overLimitMaxExtra) {
-      return { ...base, canApply: false, message: `這筆訂單會比等級額度多 ${nt(extra)}，超過人工審核上限 ${nt(SETTINGS.overLimitMaxExtra)}，無法申請。` };
+    if (extra > maxExtra) {
+      return { ...base, canApply: false, message: `這筆訂單會比等級額度多 ${nt(extra)}。臨時額度最多是等級額度的${multipleLabel()}，也就是 ${nt(maxExtra)}，無法申請。` };
     }
     return { ...base, canApply: true,
-      message: `您可以針對這一筆訂單申請人工審核，最多可比等級額度多 ${nt(SETTINGS.overLimitMaxExtra)}。核准後，要先把帳款繳到等級額度以內，才會恢復可用額度。` };
+      message: `您可以針對這一筆訂單申請人工審核，取得臨時額度。臨時額度最多是等級額度的${multipleLabel()}，也就是 ${nt(maxExtra)}。核准後，多出的 ${nt(extra)} 要先償還：每月至少繳 ${nt(SETTINGS.minMonthlyPayment)}，約 ${base.payoffMonths} 個月還到等級額度以內。在那之前不能再消費，之後才恢復為可循環使用的額度。` };
   }
 
   // ==========================================================================
@@ -570,7 +579,7 @@
       eligibility,
       settings: {
         minMonthlyPayment: SETTINGS.minMonthlyPayment, statementDay: SETTINGS.statementDay, paymentDueDay: SETTINGS.paymentDueDay,
-        overLimitMaxExtra: SETTINGS.overLimitMaxExtra, overdueLockDays: SETTINGS.overdueLockDays, overdueLegalDays: SETTINGS.overdueLegalDays,
+        overLimitMultiple: SETTINGS.overLimitMultiple, overdueLockDays: SETTINGS.overdueLockDays, overdueLegalDays: SETTINGS.overdueLegalDays,
       },
       fetchedAt: (now || new Date()).toISOString(),
     };
@@ -591,7 +600,7 @@
     const publicOrder = (o) => { const { originalPrice, rate, rule, ...snapshot } = o.priceSnapshot; return { ...o, priceSnapshot: snapshot }; };
     const publicRequest = (r) => ({
       requestId: r.requestId, status: r.status, memberId: r.memberId, productName: r.product.name, majuPrice: r.majuPrice,
-      levelLimit: r.levelLimit, balanceAfter: r.balanceAfter, extra: r.extra, phone: r.buyer.phone, createdAt: r.createdAt, reviewedAt: r.reviewedAt || null,
+      levelLimit: r.levelLimit, balanceAfter: r.balanceAfter, extra: r.extra, payoffMonths: r.payoffMonths, phone: r.buyer.phone, createdAt: r.createdAt, reviewedAt: r.reviewedAt || null,
     });
 
     function check(merchant, product, memberId, buyer, needBuyer) {
@@ -677,7 +686,7 @@
         if (!e.overLimit.canApply) return err(403, e.overLimit.message, { code: 'over_limit_not_allowed' });
         const request = {
           requestId: newId('OL'), status: 'pending_review', memberId: c.member.id, merchant, product, quote, buyer,
-          majuPrice: quote.pricing.majuPrice, levelLimit: quote.member.baseLimit, balanceAfter: quote.repayment.balance, extra: e.overLimit.extra,
+          majuPrice: quote.pricing.majuPrice, levelLimit: quote.member.baseLimit, balanceAfter: quote.repayment.balance, extra: e.overLimit.extra, payoffMonths: e.overLimit.payoffMonths,
           createdAt: new Date().toISOString(),
         };
         requests.set(request.requestId, request);
@@ -697,11 +706,12 @@
         }
         // 核准當下重新檢查：會員狀態與超額上限
         const st = standing(member);
-        const extraNow = member.outstanding + member.reserved + r.majuPrice - creditOf(member).baseLimit;
+        const creditNow = creditOf(member);
+        const extraNow = member.outstanding + member.reserved + r.majuPrice - creditNow.baseLimit;
         if (!st.canBuy || st.code === 'late') { r.status = 'rejected'; return err(409, '會員目前有逾期帳款，無法核准'); }
-        if (extraNow > SETTINGS.overLimitMaxExtra) { r.status = 'rejected'; return err(409, `目前帳款已變動，超過人工審核上限 ${nt(SETTINGS.overLimitMaxExtra)}，無法核准`); }
+        if (extraNow > maxExtraOf(creditNow)) { r.status = 'rejected'; return err(409, `目前帳款已變動，超過臨時額度上限 ${nt(maxExtraOf(creditNow))}，無法核准`); }
         r.status = 'approved';
-        const order = makeOrder(r.merchant, r.product, member, r.buyer, r.quote, { requestId: r.requestId, extra: extraNow });
+        const order = makeOrder(r.merchant, r.product, member, r.buyer, r.quote, { requestId: r.requestId, extra: extraNow, payoffMonths: payoffMonthsOf(extraNow) });
         order.repayment = repaymentOf(member.outstanding + member.reserved);
         return { status: 200, body: { request: publicRequest(r), order: publicOrder(order), returnUrl: r.merchant.returnUrl || null, creditAfter: creditOf(member) } };
       },
@@ -864,8 +874,8 @@
     const r = state.request;
     $('reqTitle').textContent = '已送出人工審核申請';
     $('reqId').textContent = r.requestId;
-    $('reqSummary').textContent = `${r.productName}　MAJU 商城售價 ${fmt(r.majuPrice)}。成立後帳款 ${fmt(r.balanceAfter)}，比等級額度 ${fmt(r.levelLimit)} 多 ${fmt(r.extra)}。`;
-    $('reqNote').textContent = `訂單尚未成立，額度也還沒有保留。審核結果會以簡訊通知 ${r.phone}。核准後，要先把帳款繳到等級額度以內，才會恢復可用額度。`;
+    $('reqSummary').textContent = `${r.productName}　MAJU 商城售價 ${fmt(r.majuPrice)}。成立後帳款 ${fmt(r.balanceAfter)}，其中等級額度 ${fmt(r.levelLimit)}、申請臨時額度 ${fmt(r.extra)}。`;
+    $('reqNote').textContent = `訂單尚未成立，額度也還沒有保留。審核結果會以簡訊通知 ${r.phone}。核准後，多出的 ${fmt(r.extra)} 是臨時額度，要先償還：每月至少繳 ${fmt(state.quote.settings.minMonthlyPayment)}，約 ${r.payoffMonths} 個月還到等級額度以內。`;
     $('approveBtn').hidden = false; $('rejectBtn').hidden = false;
     $('reqMsg').textContent = '';
   }
@@ -901,7 +911,7 @@
     $('doneOrderId').textContent = o.orderId;
     $('doneSummary').textContent = `${o.product.name}　MAJU 商城售價 ${fmt(o.priceSnapshot.majuPrice)}。每月最低應繳 ${fmt(r.minPayment)}，只繳最低應繳約 ${r.estimatedMonths} 個月繳清。`;
     $('doneCredit').textContent = (balance > c.baseLimit
-      ? `目前帳款 ${fmt(balance)}，高於${limitName(c)} ${fmt(c.baseLimit)}，可用額度為 ${fmt(0)}。再繳 ${fmt(balance - c.baseLimit)} 以上才會開始恢復可用額度。`
+      ? `目前帳款 ${fmt(balance)}，其中 ${fmt(balance - c.baseLimit)} 是臨時額度，不能循環使用。請每月至少繳 ${fmt(r.minPayment)}，約 ${Math.ceil((balance - c.baseLimit) / r.minPayment)} 個月還到${limitName(c)} ${fmt(c.baseLimit)} 以內；在那之前可用額度為 ${fmt(0)}，之後繳多少就恢復多少。`
       : `已保留額度 ${fmt(o.priceSnapshot.majuPrice)}，目前剩餘可用額度 ${fmt(c.available)}。`)
       + `帳單通知會發送至 ${o.buyer.phone}。`;
     $('doneSchedule').innerHTML = scheduleRows(r);
@@ -930,8 +940,10 @@
     out.textContent = after === 0
       ? `繳款後帳款 ${fmt(0)}，全部繳清。可用額度恢復為 ${fmt(avail)}。`
       : after > c.baseLimit
-        ? `繳款後帳款 ${fmt(after)}，仍高於${limitName(c)} ${fmt(c.baseLimit)}，可用額度還是 ${fmt(0)}。還要再繳 ${fmt(after - c.baseLimit)} 以上。`
-        : `繳款後帳款 ${fmt(after)}，可用額度 ${fmt(avail)}。`;
+        ? `繳款後帳款 ${fmt(after)}，臨時額度還剩 ${fmt(after - c.baseLimit)} 沒還清，可用額度還是 ${fmt(0)}。`
+        : balance > c.baseLimit
+          ? `繳款後帳款 ${fmt(after)}，臨時額度已還清，恢復為可循環額度。可用額度 ${fmt(avail)}。`
+          : `繳款後帳款 ${fmt(after)}，可用額度 ${fmt(avail)}。`;
   }
 
   async function cancelOrder() {

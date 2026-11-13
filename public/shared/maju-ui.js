@@ -151,8 +151,8 @@
     const r = state.request;
     $('reqTitle').textContent = '已送出人工審核申請';
     $('reqId').textContent = r.requestId;
-    $('reqSummary').textContent = `${r.productName}　MAJU 商城售價 ${fmt(r.majuPrice)}。成立後帳款 ${fmt(r.balanceAfter)}，比等級額度 ${fmt(r.levelLimit)} 多 ${fmt(r.extra)}。`;
-    $('reqNote').textContent = `訂單尚未成立，額度也還沒有保留。審核結果會以簡訊通知 ${r.phone}。核准後，要先把帳款繳到等級額度以內，才會恢復可用額度。`;
+    $('reqSummary').textContent = `${r.productName}　MAJU 商城售價 ${fmt(r.majuPrice)}。成立後帳款 ${fmt(r.balanceAfter)}，其中等級額度 ${fmt(r.levelLimit)}、申請臨時額度 ${fmt(r.extra)}。`;
+    $('reqNote').textContent = `訂單尚未成立，額度也還沒有保留。審核結果會以簡訊通知 ${r.phone}。核准後，多出的 ${fmt(r.extra)} 是臨時額度，要先償還：每月至少繳 ${fmt(state.quote.settings.minMonthlyPayment)}，約 ${r.payoffMonths} 個月還到等級額度以內。`;
     $('approveBtn').hidden = false; $('rejectBtn').hidden = false;
     $('reqMsg').textContent = '';
   }
@@ -188,7 +188,7 @@
     $('doneOrderId').textContent = o.orderId;
     $('doneSummary').textContent = `${o.product.name}　MAJU 商城售價 ${fmt(o.priceSnapshot.majuPrice)}。每月最低應繳 ${fmt(r.minPayment)}，只繳最低應繳約 ${r.estimatedMonths} 個月繳清。`;
     $('doneCredit').textContent = (balance > c.baseLimit
-      ? `目前帳款 ${fmt(balance)}，高於${limitName(c)} ${fmt(c.baseLimit)}，可用額度為 ${fmt(0)}。再繳 ${fmt(balance - c.baseLimit)} 以上才會開始恢復可用額度。`
+      ? `目前帳款 ${fmt(balance)}，其中 ${fmt(balance - c.baseLimit)} 是臨時額度，不能循環使用。請每月至少繳 ${fmt(r.minPayment)}，約 ${Math.ceil((balance - c.baseLimit) / r.minPayment)} 個月還到${limitName(c)} ${fmt(c.baseLimit)} 以內；在那之前可用額度為 ${fmt(0)}，之後繳多少就恢復多少。`
       : `已保留額度 ${fmt(o.priceSnapshot.majuPrice)}，目前剩餘可用額度 ${fmt(c.available)}。`)
       + `帳單通知會發送至 ${o.buyer.phone}。`;
     $('doneSchedule').innerHTML = scheduleRows(r);
@@ -217,8 +217,10 @@
     out.textContent = after === 0
       ? `繳款後帳款 ${fmt(0)}，全部繳清。可用額度恢復為 ${fmt(avail)}。`
       : after > c.baseLimit
-        ? `繳款後帳款 ${fmt(after)}，仍高於${limitName(c)} ${fmt(c.baseLimit)}，可用額度還是 ${fmt(0)}。還要再繳 ${fmt(after - c.baseLimit)} 以上。`
-        : `繳款後帳款 ${fmt(after)}，可用額度 ${fmt(avail)}。`;
+        ? `繳款後帳款 ${fmt(after)}，臨時額度還剩 ${fmt(after - c.baseLimit)} 沒還清，可用額度還是 ${fmt(0)}。`
+        : balance > c.baseLimit
+          ? `繳款後帳款 ${fmt(after)}，臨時額度已還清，恢復為可循環額度。可用額度 ${fmt(avail)}。`
+          : `繳款後帳款 ${fmt(after)}，可用額度 ${fmt(avail)}。`;
   }
 
   async function cancelOrder() {
