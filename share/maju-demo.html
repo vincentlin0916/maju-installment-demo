@@ -348,7 +348,8 @@
   // ==========================================================================
   const SETTINGS = {
     minMonthlyPayment: 3000,   // 每月最低應繳；帳款不足此數時繳清餘額
-    paymentDueDay: 10,         // 每月最低應繳日
+    statementDay: 10,          // 每月出帳日（沿用 V2.6，2026-11-13 定案）
+    paymentDueDay: 25,         // 每月繳款截止日（沿用 V2.6：10 日出帳、25 日截止）
     diamondRatePct: 105,       // 鑽石卡：原價 × 1.05
     vipRatePctOver50999: null, // 原價超過 50,999 的倍率（百分比）；null = 沿用每千元 +1%
     overLimitMaxExtra: 10000,  // 人工審核：最多可比等級額度多出的金額
@@ -472,7 +473,8 @@
   function dueDates(count, now) {
     const today = now || new Date();
     const y = today.getFullYear();
-    const m = today.getMonth() + (today.getDate() >= SETTINGS.paymentDueDay ? 1 : 0);
+    // 出帳日之後才成立的消費歸入下個月的帳單；每張帳單在當月的繳款截止日到期
+    const m = today.getMonth() + (today.getDate() >= SETTINGS.statementDay ? 1 : 0);
     const out = [];
     for (let i = 0; i < count; i++) {
       const d = new Date(y, m + i, SETTINGS.paymentDueDay); // 本地時區，避免轉 UTC 後日期退一天
@@ -567,7 +569,7 @@
       repayment: repaymentOf(balanceAfter, now),
       eligibility,
       settings: {
-        minMonthlyPayment: SETTINGS.minMonthlyPayment, paymentDueDay: SETTINGS.paymentDueDay,
+        minMonthlyPayment: SETTINGS.minMonthlyPayment, statementDay: SETTINGS.statementDay, paymentDueDay: SETTINGS.paymentDueDay,
         overLimitMaxExtra: SETTINGS.overLimitMaxExtra, overdueLockDays: SETTINGS.overdueLockDays, overdueLegalDays: SETTINGS.overdueLegalDays,
       },
       fetchedAt: (now || new Date()).toISOString(),
@@ -782,7 +784,7 @@
   function renderPay() {
     const q = state.quote, r = q.repayment, s = q.settings, vip = q.member.type === 'vip';
     $('payTitle').textContent = `每月最低應繳 ${fmt(s.minMonthlyPayment)}，繳到清償為止`;
-    $('payDesc').textContent = `每月 ${s.paymentDueDay} 日前單筆至少繳 ${fmt(s.minMonthlyPayment)}；帳款不到 ${fmt(s.minMonthlyPayment)} 時，繳清餘額即可。可以多繳或一次繳清，繳多少就恢復多少可用額度。${vip ? '' : '保證金不會自動抵扣帳款。'}`;
+    $('payDesc').textContent = `每月 ${s.statementDay} 日出帳，${s.paymentDueDay} 日前單筆至少繳 ${fmt(s.minMonthlyPayment)}；帳款不到 ${fmt(s.minMonthlyPayment)} 時，繳清餘額即可。可以多繳或一次繳清，繳多少就恢復多少可用額度。${vip ? '' : '保證金不會自動抵扣帳款。'}`;
     $('pBalance').textContent = fmt(r.balance);
     $('pMin').textContent = fmt(r.minPayment);
     $('pMonths').textContent = `約 ${r.estimatedMonths} 個月繳清`;

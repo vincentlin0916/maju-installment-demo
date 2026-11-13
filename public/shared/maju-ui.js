@@ -71,7 +71,7 @@
   function renderPay() {
     const q = state.quote, r = q.repayment, s = q.settings, vip = q.member.type === 'vip';
     $('payTitle').textContent = `每月最低應繳 ${fmt(s.minMonthlyPayment)}，繳到清償為止`;
-    $('payDesc').textContent = `每月 ${s.paymentDueDay} 日前單筆至少繳 ${fmt(s.minMonthlyPayment)}；帳款不到 ${fmt(s.minMonthlyPayment)} 時，繳清餘額即可。可以多繳或一次繳清，繳多少就恢復多少可用額度。${vip ? '' : '保證金不會自動抵扣帳款。'}`;
+    $('payDesc').textContent = `每月 ${s.statementDay} 日出帳，${s.paymentDueDay} 日前單筆至少繳 ${fmt(s.minMonthlyPayment)}；帳款不到 ${fmt(s.minMonthlyPayment)} 時，繳清餘額即可。可以多繳或一次繳清，繳多少就恢復多少可用額度。${vip ? '' : '保證金不會自動抵扣帳款。'}`;
     $('pBalance').textContent = fmt(r.balance);
     $('pMin').textContent = fmt(r.minPayment);
     $('pMonths').textContent = `約 ${r.estimatedMonths} 個月繳清`;
