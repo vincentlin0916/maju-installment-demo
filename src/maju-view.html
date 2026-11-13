@@ -1,0 +1,138 @@
+<!-- ===================== MAJU 確認頁 ===================== -->
+<div id="majuView">
+  <header><div class="wrap">
+    <div class="logo maju">MAJU<span>先買後付</span></div>
+    <div class="demo"><label for="memberSel">示範會員</label> <select id="memberSel"></select></div>
+  </div></header>
+  <main class="wrap">
+    <div class="steps"><b>① 會員與額度</b><i>›</i><b>② 確認商品與售價</b><i>›</i><b>③ 繳款方式</b><i>›</i>④ 完成</div>
+
+    <section id="loadingView" class="card">
+      <div class="source"><span class="dot loading"></span>正在向合作商城即時取得商品資料，並檢核會員額度…</div>
+      <div class="product" style="margin-top:14px">
+        <div class="skeleton" style="height:120px;width:120px;flex:none"></div>
+        <div style="flex:1">
+          <div class="skeleton" style="width:30%"></div>
+          <div class="skeleton" style="width:70%;margin-top:10px;height:22px"></div>
+          <div class="skeleton" style="width:50%;margin-top:10px"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="errorView" class="error" hidden></section>
+
+    <div id="checkoutView" class="layout" hidden>
+      <div>
+        <section class="card">
+          <h2><span class="num">1</span>會員資格與可用額度</h2>
+          <div class="member">
+            <div class="cardchip" id="cardChip"><div class="lvl" id="cardLvl"></div><div class="cn" id="cardName"></div></div>
+            <div class="credit">
+              <div class="row"><span id="limitLabel">等級額度</span><b id="cLimit"></b></div>
+              <div class="bar"><i class="used" id="barUsed"></i><i class="res" id="barRes"></i><i class="this" id="barThis"></i></div>
+              <div class="legend"><span><i style="background:var(--muted)"></i>未償還帳款 <b id="cOut"></b></span><span><i style="background:var(--warn)"></i>保留額度 <b id="cRes"></b></span><span><i style="background:var(--brand)"></i>本筆交易</span><span>剩餘可用 <b id="cAvail"></b></span></div>
+            </div>
+          </div>
+          <div id="blocked" class="blocked" hidden></div>
+        </section>
+
+        <section class="card">
+          <h2><span class="num">2</span>確認商品與 MAJU 商城售價</h2>
+          <div class="product">
+            <div class="tile sm" id="pTile"></div>
+            <div>
+              <div class="brand" id="pBrand"></div>
+              <div class="name" id="pName"></div>
+              <div class="spec" id="pSpec"></div>
+              <div class="source"><span class="dot"></span>商品資料由 <b id="mName"></b> 即時提供　<span id="fetchedAt"></span></div>
+            </div>
+          </div>
+          <div class="pricebox">
+            <span class="label">MAJU 商城售價</span>
+            <span class="maju" id="majuPrice"></span>
+            <div class="psub"><span>0 利率・0 手續費</span><span>免信用卡</span></div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2><span class="num">3</span>繳款方式 <small>不用選期數</small></h2>
+          <div class="revolving"><div class="t" id="payTitle"></div><p id="payDesc"></p></div>
+          <div class="stats">
+            <div><span>本筆成立後帳款</span><b id="pBalance"></b></div>
+            <div><span>下次最低應繳</span><b id="pMin"></b></div>
+            <div><span>只繳最低應繳</span><b id="pMonths"></b></div>
+            <div><span>首次應繳日</span><b id="pFirst"></b></div>
+          </div>
+          <div class="notice" id="minNotice"></div>
+        </section>
+
+        <section class="card">
+          <h2><span class="num">4</span>聯絡資料</h2>
+          <form id="buyerForm" autocomplete="on" novalidate>
+            <div class="row2">
+              <div class="field"><label for="phone">手機（接收審核與帳單通知）*</label><input id="phone" name="phone" inputmode="tel" placeholder="0912345678"><div class="fe" id="phoneErr"></div></div>
+              <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" placeholder="you@example.com"><div class="fe"></div></div>
+            </div>
+          </form>
+        </section>
+      </div>
+
+      <aside class="card summary">
+        <h2>訂單摘要</h2>
+        <div class="line"><span>商品</span><span id="sName" style="text-align:right;max-width:60%"></span></div>
+        <div class="line"><span>MAJU 商城售價</span><span id="sPrice"></span></div>
+        <div class="line"><span>每月最低應繳</span><span id="sMin"></span></div>
+        <div class="line"><span>只繳最低應繳</span><span id="sMonths"></span></div>
+        <div class="line muted"><span>利息 / 手續費</span><span>NT$ 0 / NT$ 0</span></div>
+        <div class="line muted"><span>本筆成立後帳款</span><span id="sBalance"></span></div>
+        <div class="line muted"><span>交易後剩餘可用額度</span><span id="sAfter"></span></div>
+        <div class="line total"><span>訂單總金額</span><span id="sTotal"></span></div>
+        <details><summary>查看只繳最低應繳的繳款試算</summary><table><thead><tr><th>月份</th><th>最低應繳日</th><th>金額</th></tr></thead><tbody id="schedule"></tbody></table></details>
+        <button class="btn btn-primary" id="submitBtn" type="button">確認交易</button>
+        <button class="btn btn-ghost" id="backBtn" type="button">取消，返回合作商城</button>
+        <div class="fe" id="submitErr" style="font-size:12px;color:var(--err);margin-top:6px"></div>
+        <p class="legal">確認即表示您同意 MAJU 服務條款與個資告知事項。訂單成立後將保留對應額度；付款確認前取消，額度將依規則釋放。</p>
+      </aside>
+    </div>
+
+    <!-- 額度不足：已送出人工審核申請 -->
+    <section id="pendingView" class="card success" hidden>
+      <div class="check wait">…</div>
+      <h3 id="reqTitle">已送出人工審核申請</h3>
+      <div>申請編號</div>
+      <div class="oid" id="reqId"></div>
+      <p id="reqSummary"></p>
+      <p class="sub2" id="reqNote"></p>
+      <div class="acts">
+        <button class="btn btn-demo" id="approveBtn" type="button">示範：後台核准</button>
+        <button class="btn btn-demo" id="rejectBtn" type="button">示範：後台駁回</button>
+        <button class="btn btn-ghost" id="reqBackBtn" type="button">返回合作商城</button>
+      </div>
+      <p class="toast" id="reqMsg"></p>
+    </section>
+
+    <section id="doneView" class="card success" hidden>
+      <div class="check">✓</div>
+      <h3 id="doneTitle">訂單已建立，額度已保留</h3>
+      <div>訂單編號</div>
+      <div class="oid" id="doneOrderId"></div>
+      <p id="doneSummary"></p>
+      <p class="sub2" id="doneCredit"></p>
+
+      <div class="calc" id="calcBox">
+        <div class="calc-t">繳款試算 <small>以本筆入帳後的帳款計算</small></div>
+        <label for="payAmt">這次要繳多少</label>
+        <div class="calc-row"><input id="payAmt" inputmode="numeric" autocomplete="off"><button class="btn" id="payCalcBtn" type="button">試算</button></div>
+        <div class="hint" id="payRange"></div>
+        <div class="calc-out" id="payOut"></div>
+      </div>
+
+      <details><summary>查看只繳最低應繳的繳款試算</summary><table><thead><tr><th>月份</th><th>最低應繳日</th><th>金額</th></tr></thead><tbody id="doneSchedule"></tbody></table></details>
+      <div class="acts">
+        <button class="btn btn-primary" id="doneBackBtn" type="button">返回合作商城</button>
+        <button class="btn btn-ghost" id="cancelBtn" type="button">示範：取消此訂單並釋放額度</button>
+      </div>
+      <p class="toast" id="cancelMsg"></p>
+    </section>
+  </main>
+</div>

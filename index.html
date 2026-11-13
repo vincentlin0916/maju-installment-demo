@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<style>body{margin:0;font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>MAJU 分期付款流程示範</title>
+<style>body{margin:0;font-size:14px}img{max-width:100%}</style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
 <style>
   /* Layout: two "sites" in one page — XMART GO shop (teal) and MAJU checkout (rose), switched by hash. Checkout is a 2-column grid that stacks on phones. */
@@ -119,19 +119,8 @@
   .pricebox .maju { font-size: 28px; font-weight: 900; color: var(--brand); text-align: right; font-variant-numeric: tabular-nums; }
   .pricebox .psub { font-size: 12px; color: var(--muted); grid-column: 1 / -1; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
 
-  .plans { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-  .plan { position: relative; border: 2px solid var(--line); border-radius: 12px; padding: 12px 12px 10px; cursor: pointer; background: var(--card); transition: border-color .15s, box-shadow .15s; }
-  .plan:hover { border-color: var(--brand-line); }
-  .plan input { position: absolute; opacity: 0; inset: 0; cursor: pointer; margin: 0; }
-  .plan:has(input:focus-visible) { outline: 2px solid var(--brand); outline-offset: 2px; }
-  .plan.selected { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
-  .plan .terms { font-weight: 800; font-size: 18px; }
-  .plan .per { margin-top: 2px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
-  .plan .per b { color: var(--fg); font-size: 16px; }
-  .plan .zero { margin-top: 6px; font-size: 11px; color: var(--ok); background: var(--ok-soft); display: inline-block; padding: 1px 7px; border-radius: 999px; }
-  .plan .best { position: absolute; top: -9px; right: 10px; font-size: 10px; background: var(--brand); color: #fff; padding: 1px 7px; border-radius: 999px; }
   .revolving { border: 2px solid var(--brand); border-radius: 12px; padding: 14px 16px; background: var(--card); }
-  .revolving .t { font-weight: 800; font-size: 16px; }
+  .revolving .t { font-weight: 800; font-size: 16px; text-wrap: balance; }
   .revolving p { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
   .hint { font-size: 12px; color: var(--muted); margin: 10px 0 0; }
   .notice { font-size: 12px; color: var(--warn); background: var(--warn-soft); border: 1px solid var(--warn-line); border-radius: 10px; padding: 8px 12px; margin-top: 10px; }
@@ -176,6 +165,26 @@
   .success .acts { max-width: 320px; margin: 20px auto 0; display: grid; gap: 6px; }
   .success .acts .btn-primary { margin: 0; }
   @media (prefers-reduced-motion: reduce) { .dot.loading, .skeleton { animation: none; } }
+
+  /* 2026-11-13 改版：不分期數，改為每月最低應繳 */
+  [hidden] { display: none !important; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 12px; }
+  .stats > div { background: var(--soft); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+  .stats span { display: block; font-size: 12px; color: var(--muted); }
+  .stats b { font-size: 16px; font-variant-numeric: tabular-nums; }
+  .success .check.wait { background: var(--warn-soft); color: var(--warn); }
+  .btn-demo { background: var(--card); border: 1px dashed var(--muted); color: var(--fg); font-weight: 500; }
+  .calc { max-width: 440px; margin: 18px auto 6px; text-align: left; background: var(--soft); border-radius: 12px; padding: 14px 16px; }
+  .calc-t { font-weight: 700; margin-bottom: 8px; }
+  .calc-t small { font-weight: 400; color: var(--muted); font-size: 12px; margin-left: 6px; }
+  .calc label { font-size: 13px; color: var(--muted); }
+  .calc-row { display: flex; gap: 8px; margin-top: 4px; }
+  .calc-row input { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 15px; background: var(--card); color: var(--fg); font-variant-numeric: tabular-nums; }
+  .calc-row input:focus { outline: 2px solid var(--brand-line); border-color: var(--brand); }
+  .calc-row .btn { width: auto; padding-inline: 18px; background: var(--card); border: 1px solid var(--line); }
+  .calc-out { font-size: 13px; margin-top: 8px; min-height: 20px; font-variant-numeric: tabular-nums; }
+  .calc-out.bad { color: var(--err); }
+  .success details { max-width: 440px; margin: 0 auto; text-align: left; }
 </style>
 </head>
 <body>
@@ -196,11 +205,11 @@
 <!-- ===================== MAJU 確認頁 ===================== -->
 <div id="majuView" hidden>
   <header><div class="wrap">
-    <div class="logo maju">MAJU<span>先買後付分期</span></div>
+    <div class="logo maju">MAJU<span>先買後付</span></div>
     <div class="demo"><label for="memberSel">示範會員</label> <select id="memberSel"></select></div>
   </div></header>
   <main class="wrap">
-    <div class="steps"><b>① 會員與額度</b><i>›</i><b>② 確認商品與售價</b><i>›</i><b>③ 選擇分期</b><i>›</i>④ 完成</div>
+    <div class="steps"><b>① 會員與額度</b><i>›</i><b>② 確認商品與售價</b><i>›</i><b>③ 繳款方式</b><i>›</i>④ 完成</div>
 
     <section id="loadingView" class="card">
       <div class="source"><span class="dot loading"></span>正在向合作商城即時取得商品資料，並檢核會員額度…</div>
@@ -223,7 +232,7 @@
           <div class="member">
             <div class="cardchip" id="cardChip"><div class="lvl" id="cardLvl"></div><div class="cn" id="cardName"></div></div>
             <div class="credit">
-              <div class="row"><span id="limitLabel">基本購物額度</span><b id="cLimit"></b></div>
+              <div class="row"><span id="limitLabel">等級額度</span><b id="cLimit"></b></div>
               <div class="bar"><i class="used" id="barUsed"></i><i class="res" id="barRes"></i><i class="this" id="barThis"></i></div>
               <div class="legend"><span><i style="background:var(--muted)"></i>未償還帳款 <b id="cOut"></b></span><span><i style="background:var(--warn)"></i>保留額度 <b id="cRes"></b></span><span><i style="background:var(--brand)"></i>本筆交易</span><span>剩餘可用 <b id="cAvail"></b></span></div>
             </div>
@@ -245,14 +254,19 @@
           <div class="pricebox">
             <span class="label">MAJU 商城售價</span>
             <span class="maju" id="majuPrice"></span>
-            <div class="psub"><span>含 0 利率分期服務</span><span>免信用卡</span></div>
+            <div class="psub"><span>0 利率・0 手續費</span><span>免信用卡</span></div>
           </div>
         </section>
 
         <section class="card">
-          <h2><span class="num">3</span>選擇分期方案 <small>0 利率、0 手續費</small></h2>
-          <div id="plans" class="plans"></div>
-          <p class="hint" id="planHint"></p>
+          <h2><span class="num">3</span>繳款方式 <small>不用選期數</small></h2>
+          <div class="revolving"><div class="t" id="payTitle"></div><p id="payDesc"></p></div>
+          <div class="stats">
+            <div><span>本筆成立後帳款</span><b id="pBalance"></b></div>
+            <div><span>下次最低應繳</span><b id="pMin"></b></div>
+            <div><span>只繳最低應繳</span><b id="pMonths"></b></div>
+            <div><span>首次應繳日</span><b id="pFirst"></b></div>
+          </div>
           <div class="notice" id="minNotice"></div>
         </section>
 
@@ -271,27 +285,53 @@
         <h2>訂單摘要</h2>
         <div class="line"><span>商品</span><span id="sName" style="text-align:right;max-width:60%"></span></div>
         <div class="line"><span>MAJU 商城售價</span><span id="sPrice"></span></div>
-        <div class="line"><span>分期方案</span><span id="sTerms"></span></div>
-        <div class="line"><span>每期應繳</span><span id="sPer"></span></div>
+        <div class="line"><span>每月最低應繳</span><span id="sMin"></span></div>
+        <div class="line"><span>只繳最低應繳</span><span id="sMonths"></span></div>
         <div class="line muted"><span>利息 / 手續費</span><span>NT$ 0 / NT$ 0</span></div>
+        <div class="line muted"><span>本筆成立後帳款</span><span id="sBalance"></span></div>
         <div class="line muted"><span>交易後剩餘可用額度</span><span id="sAfter"></span></div>
         <div class="line total"><span>訂單總金額</span><span id="sTotal"></span></div>
-        <details><summary>查看各期繳款時程</summary><table><thead><tr><th>期別</th><th>最低應繳日</th><th>金額</th></tr></thead><tbody id="schedule"></tbody></table></details>
+        <details><summary>查看只繳最低應繳的繳款試算</summary><table><thead><tr><th>月份</th><th>最低應繳日</th><th>金額</th></tr></thead><tbody id="schedule"></tbody></table></details>
         <button class="btn btn-primary" id="submitBtn" type="button">確認交易</button>
         <button class="btn btn-ghost" id="backBtn" type="button">取消，返回合作商城</button>
         <div class="fe" id="submitErr" style="font-size:12px;color:var(--err);margin-top:6px"></div>
-        <p class="legal">確認即表示您同意 MAJU 分期服務條款與個資告知事項。訂單成立後將保留對應額度；付款確認前取消，額度將依規則釋放。</p>
+        <p class="legal">確認即表示您同意 MAJU 服務條款與個資告知事項。訂單成立後將保留對應額度；付款確認前取消，額度將依規則釋放。</p>
       </aside>
     </div>
 
+    <!-- 額度不足：已送出人工審核申請 -->
+    <section id="pendingView" class="card success" hidden>
+      <div class="check wait">…</div>
+      <h3 id="reqTitle">已送出人工審核申請</h3>
+      <div>申請編號</div>
+      <div class="oid" id="reqId"></div>
+      <p id="reqSummary"></p>
+      <p class="sub2" id="reqNote"></p>
+      <div class="acts">
+        <button class="btn btn-demo" id="approveBtn" type="button">示範：後台核准</button>
+        <button class="btn btn-demo" id="rejectBtn" type="button">示範：後台駁回</button>
+        <button class="btn btn-ghost" id="reqBackBtn" type="button">返回合作商城</button>
+      </div>
+      <p class="toast" id="reqMsg"></p>
+    </section>
+
     <section id="doneView" class="card success" hidden>
       <div class="check">✓</div>
-      <h3>訂單已建立，額度已保留</h3>
+      <h3 id="doneTitle">訂單已建立，額度已保留</h3>
       <div>訂單編號</div>
       <div class="oid" id="doneOrderId"></div>
       <p id="doneSummary"></p>
       <p class="sub2" id="doneCredit"></p>
-      <table><thead><tr><th>期別</th><th>最低應繳日</th><th>金額</th></tr></thead><tbody id="doneSchedule"></tbody></table>
+
+      <div class="calc" id="calcBox">
+        <div class="calc-t">繳款試算 <small>以本筆入帳後的帳款計算</small></div>
+        <label for="payAmt">這次要繳多少</label>
+        <div class="calc-row"><input id="payAmt" inputmode="numeric" autocomplete="off"><button class="btn" id="payCalcBtn" type="button">試算</button></div>
+        <div class="hint" id="payRange"></div>
+        <div class="calc-out" id="payOut"></div>
+      </div>
+
+      <details><summary>查看只繳最低應繳的繳款試算</summary><table><thead><tr><th>月份</th><th>最低應繳日</th><th>金額</th></tr></thead><tbody id="doneSchedule"></tbody></table></details>
       <div class="acts">
         <button class="btn btn-primary" id="doneBackBtn" type="button">返回合作商城</button>
         <button class="btn btn-ghost" id="cancelBtn" type="button">示範：取消此訂單並釋放額度</button>
@@ -302,254 +342,712 @@
 </div>
 
 <script>
-// ============================================================================
-// 後台可設定參數（示範值）
-// ============================================================================
-const SETTINGS = {
-  minMonthlyPayment: 3000, paymentDueDay: 10,
-  installmentTermsByLevel: { 1:[3,6,9,12], 2:[3,6,9,12], 3:[3,6,9,12], 4:[3,6,9,12], 5:[3,6,9,12], 6:[3,6,9,12], 7:[3,6,9,12] },
-  diamondRate: 1.05,
-};
-const VIP_LEVELS = { 1:{card:'綠卡',limit:5000}, 2:{card:'銀卡',limit:10000}, 3:{card:'金卡',limit:15000}, 4:{card:'白金卡',limit:20000}, 5:{card:'鈦金卡',limit:25000}, 6:{card:'黑金卡',limit:30000}, 7:{card:'紫金卡',limit:35000} };
-const MERCHANT = { id:'xmart_go', name:'XMART GO' };
-
-// 示範會員（正式環境由 MAJU 登入 session 取得）
-const MEMBERS = {
-  m_vip1:    { id:'m_vip1', name:'Maria Santos', type:'vip', level:1, outstanding:2800, reserved:0, kyc:'approved', status:'active' },
-  m_vip3:    { id:'m_vip3', name:'Nguyen Thi Hoa', type:'vip', level:3, outstanding:4200, reserved:0, kyc:'approved', status:'active' },
-  m_vip7:    { id:'m_vip7', name:'Budi Santoso', type:'vip', level:7, outstanding:0, reserved:0, kyc:'approved', status:'active' },
-  m_diamond: { id:'m_diamond', name:'Somchai P.', type:'diamond', deposit:20000, outstanding:6000, reserved:0, kyc:'approved', status:'active' },
-  m_overdue: { id:'m_overdue', name:'Jose Reyes', type:'vip', level:2, outstanding:9500, reserved:0, kyc:'approved', status:'suspended', overdueDays:3 },
-};
-
-// 模擬合作電商（XMART GO）的商品 API 資料
-const PARTNER_PRODUCTS = {
-  P001: { id:'P001', name:'AirPure 智慧空氣清淨機 Pro', brand:'AirPure', spec:'適用 12 坪 / HEPA H13 / App 遠端控制', price:15900, stock:23, hue:200 },
-  P002: { id:'P002', name:'NovaBook 14 吋輕薄筆電', brand:'Nova', spec:'14" 2.8K OLED / 16GB / 512GB SSD', price:32900, stock:8, hue:260 },
-  P003: { id:'P003', name:'ErgoChair 人體工學椅', brand:'Ergo', spec:'網布椅背 / 4D 扶手 / 腰靠可調', price:9800, stock:41, hue:150 },
-  P004: { id:'P004', name:'SoundPod 真無線藍牙耳機', brand:'SoundPod', spec:'主動降噪 / 30 小時續航', price:1999, stock:120, hue:20 },
-  P005: { id:'P005', name:'HydroFlask 保溫瓶 750ml', brand:'Hydro', spec:'316 不鏽鋼 / 24 小時保冷', price:399, stock:300, hue:330 },
-};
-const ORDERS = new Map();
-
-// 模擬：MAJU 後端即時呼叫合作電商商品 API（含網路延遲）
-function fetchPartnerProduct(productId) {
-  return new Promise((resolve) => setTimeout(() => resolve(PARTNER_PRODUCTS[productId] || null), 700));
-}
-
-// ============================================================================
-// 價格引擎與額度（與原型伺服器相同邏輯）
-// ============================================================================
-function vipRate(p) { if (p <= 499) return 1.05; if (p <= 999) return 1.10; return Math.round((1.10 + 0.01 * Math.floor(p / 1000)) * 100) / 100; }
-function computeMajuPrice(original, member) {
-  if (member.type === 'diamond') return { price: Math.ceil(original * SETTINGS.diamondRate), rate: SETTINGS.diamondRate };
-  const rate = vipRate(original); return { price: Math.ceil(original * rate), rate };
-}
-function creditOf(m) {
-  const baseLimit = m.type === 'diamond' ? m.deposit : VIP_LEVELS[m.level].limit;
-  return { type:m.type, level:m.type==='vip'?m.level:null, card:m.type==='diamond'?'鑽石卡':VIP_LEVELS[m.level].card, baseLimit, outstanding:m.outstanding, reserved:m.reserved, available:Math.max(0, baseLimit - m.outstanding - m.reserved) };
-}
-function nextDueDates(count) {
-  const t = new Date(); const y = t.getFullYear(); const m = t.getMonth() + (t.getDate() >= SETTINGS.paymentDueDay ? 1 : 0);
-  return Array.from({ length: count }, (_, i) => { const d = new Date(y, m + i, SETTINGS.paymentDueDay); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; });
-}
-function buildPlans(majuPrice, member) {
-  if (member.type === 'diamond') {
-    const months = Math.ceil(majuPrice / SETTINGS.minMonthlyPayment); let remain = majuPrice;
-    const schedule = nextDueDates(months).map((dueDate, i) => { const amount = Math.min(SETTINGS.minMonthlyPayment, remain); remain -= amount; return { period:i+1, dueDate, amount }; });
-    return [{ kind:'revolving', terms:null, label:'依每月最低應繳繳款', perPeriod:SETTINGS.minMonthlyPayment, lastPeriod:schedule[schedule.length-1].amount, total:majuPrice, estimatedMonths:months, schedule }];
-  }
-  return (SETTINGS.installmentTermsByLevel[member.level] || [3]).map((terms) => {
-    const base = Math.floor(majuPrice / terms), remainder = majuPrice - base * terms;
-    const schedule = nextDueDates(terms).map((dueDate, i) => ({ period:i+1, dueDate, amount: i === terms-1 ? base+remainder : base }));
-    return { kind:'installment', terms, label:`${terms} 期`, perPeriod:base, lastPeriod:base+remainder, total:majuPrice, schedule };
-  });
-}
-function eligibility(m) {
-  if (m.kyc !== 'approved') return { ok:false, reason:'身分驗證（KYC）尚未通過，無法使用分期服務' };
-  if (m.status === 'suspended') return { ok:false, reason:`帳戶已逾期 ${m.overdueDays} 天，暫停所有新交易；完成最低應繳並正式入帳後恢復` };
-  return { ok:true };
-}
-function buildQuote(product, member) {
-  const pricing = computeMajuPrice(product.price, member), credit = creditOf(member), elig = eligibility(member);
-  const sufficient = pricing.price <= credit.available;
-  return {
-    product, member: { id:member.id, name:member.name, ...credit },
-    pricing: { majuPrice: pricing.price, availableAfter: credit.available - pricing.price },
-    eligibility: elig.ok && !sufficient
-      ? { ok:false, code:'insufficient_credit', reason:'可用額度不足', shortfall: pricing.price - credit.available, action: member.type==='diamond' ? '請先追加保證金，入帳後再進行交易' : '可針對本筆訂單申請人工超額審核（不代表永久提高額度）' }
-      : elig.ok ? { ok:true } : { ok:false, code:'blocked', reason: elig.reason },
-    plans: buildPlans(pricing.price, member), fetchedAt: new Date(),
+// MAJU 示範：計價、額度、逾期與繳款規則。
+// 原型伺服器（server.js）與單檔示範頁共用同一份，兩邊的數字一定一致。
+// 規則來源：2026-11-07 需求規劃書 + 2026-11-13 會議（取消期數、每月最低應繳、超額人工審核）。
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.MajuCore = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  // ==========================================================================
+  // 後台可設定的參數（正式環境存資料庫，由管理後台維護並保留歷史）
+  // ==========================================================================
+  const SETTINGS = {
+    minMonthlyPayment: 3000,   // 每月最低應繳；帳款不足此數時繳清餘額
+    paymentDueDay: 10,         // 每月最低應繳日
+    diamondRatePct: 105,       // 鑽石卡：原價 × 1.05
+    vipRatePctOver50999: null, // 原價超過 50,999 的倍率（百分比）；null = 沿用每千元 +1%
+    overLimitMaxExtra: 10000,  // 人工審核：最多可比等級額度多出的金額
+    overLimitMinPaidPeriods: 1, // 人工審核：至少完成幾期繳款才可申請
+    overdueLockDays: 7,        // 逾期達幾天：暫停新消費、一般 VIP 降一級
+    overdueLegalDays: 30,      // 逾期達幾天：停止所有交易並進入法律程序（會議提到 15 天或一個月，尚未定案）
   };
-}
 
-// ============================================================================
-// 頁面狀態與路由（#shop / #checkout）
-// ============================================================================
-const $ = (id) => document.getElementById(id);
-const fmt = (n) => 'NT$ ' + Number(n).toLocaleString('zh-TW');
-const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const tileStyle = (p) => `background: linear-gradient(135deg, hsl(${p.hue} 60% 55%), hsl(${p.hue + 40} 55% 35%))`;
+  // 一般 VIP 等級、卡別與等級額度（每升一級 +5,000；連續 3 個月正常繳款升一級）
+  const VIP_LEVELS = {
+    1: { card: '綠卡', limit: 5000 },
+    2: { card: '銀卡', limit: 10000 },
+    3: { card: '金卡', limit: 15000 },
+    4: { card: '白金卡', limit: 20000 },
+    5: { card: '鈦金卡', limit: 25000 },
+    6: { card: '黑金卡', limit: 30000 },
+    7: { card: '紫金卡', limit: 35000 },
+  };
 
-let state = { productId: null, memberId: 'm_vip3', quote: null, selectedTerms: null, lastOrder: null };
+  const nt = (n) => 'NT$ ' + Number(n).toLocaleString('zh-TW');
 
-function route() {
-  const checkout = location.hash === '#checkout' && state.productId;
-  $('shopView').hidden = !!checkout;
-  $('majuView').hidden = !checkout;
-  if (checkout) loadQuote();
-  window.scrollTo(0, 0);
-}
-function goShop() { location.hash = '#shop'; }
-function goCheckout(productId) { state.productId = productId; location.hash = '#checkout'; if (location.hash === '#checkout') route(); }
-window.addEventListener('hashchange', route);
-
-// ---- XMART GO ----
-function renderShop() {
-  const grid = $('grid'); grid.innerHTML = '';
-  for (const p of Object.values(PARTNER_PRODUCTS)) {
-    const el = document.createElement('article'); el.className = 'pcard';
-    el.innerHTML = `
-      <div class="tile" style="${tileStyle(p)}">${esc(p.brand)}</div>
-      <div class="pbody">
-        <div class="brand">${esc(p.brand)} <span class="tag">庫存 ${p.stock}</span></div>
-        <div class="name">${esc(p.name)}</div>
-        <div class="spec">${esc(p.spec)}</div>
-        <div class="price">${fmt(p.price)}<small>一次付清</small></div>
-        <div class="actions">
-          <button class="btn btn-shop" type="button" data-buy="${p.id}">立即購買</button>
-          <button class="btn btn-maju" type="button" data-maju="${p.id}">MAJU 分期付款<b>0 利率・最多 12 期・免信用卡</b></button>
-        </div>
-        <div class="toast" data-toast="${p.id}"></div>
-      </div>`;
-    grid.appendChild(el);
+  // ==========================================================================
+  // 示範資料
+  // ==========================================================================
+  function demoMembers() {
+    return {
+      m_vip1: { id: 'm_vip1', name: 'Maria Santos', type: 'vip', level: 1, outstanding: 0, reserved: 0, paidPeriods: 0, overdueDays: 0, kyc: 'approved' },
+      m_vip3: { id: 'm_vip3', name: 'Nguyen Thi Hoa', type: 'vip', level: 3, outstanding: 4200, reserved: 0, paidPeriods: 5, overdueDays: 0, kyc: 'approved' },
+      m_vip7: { id: 'm_vip7', name: 'Budi Santoso', type: 'vip', level: 7, outstanding: 0, reserved: 0, paidPeriods: 14, overdueDays: 0, kyc: 'approved' },
+      m_diamond: { id: 'm_diamond', name: 'Somchai P.', type: 'diamond', deposit: 20000, outstanding: 6000, reserved: 0, paidPeriods: 3, overdueDays: 0, kyc: 'approved' },
+      m_late3: { id: 'm_late3', name: 'Ana Lim', type: 'vip', level: 2, outstanding: 6500, reserved: 0, paidPeriods: 2, overdueDays: 3, kyc: 'approved' },
+      // 原 VIP3，逾期達 7 天已降為 VIP2
+      m_overdue: { id: 'm_overdue', name: 'Jose Reyes', type: 'vip', level: 2, outstanding: 9500, reserved: 0, paidPeriods: 4, overdueDays: 9, kyc: 'approved' },
+      m_legal: { id: 'm_legal', name: 'Dewi Kartika', type: 'vip', level: 1, outstanding: 4800, reserved: 0, paidPeriods: 1, overdueDays: 35, kyc: 'approved' },
+    };
   }
-  grid.addEventListener('click', (e) => {
-    const buy = e.target.closest('[data-buy]'); const maju = e.target.closest('[data-maju]');
-    if (buy) { const t = grid.querySelector(`[data-toast="${buy.dataset.buy}"]`); t.textContent = '這裡走 XMART GO 自己的結帳流程（示範未實作）'; setTimeout(() => { t.textContent = ''; }, 2500); }
-    if (maju) goCheckout(maju.dataset.maju);
-  });
-}
 
-// ---- MAJU ----
-function showMaju(view) { for (const id of ['loadingView','errorView','checkoutView','doneView']) $(id).hidden = id !== view; }
-function fail(msg) { $('errorView').innerHTML = `<b>無法載入分期頁面</b><br>${esc(msg)}`; showMaju('errorView'); }
-function currentPlan() { const q = state.quote; return q.member.type === 'diamond' ? q.plans[0] : q.plans.find((p) => p.terms === state.selectedTerms); }
-function scheduleRows(plan) { return plan.schedule.map((s) => `<tr><td>第 ${s.period} 期</td><td>${s.dueDate}</td><td>${fmt(s.amount)}</td></tr>`).join(''); }
-
-function renderMemberSelect() {
-  const sel = $('memberSel'); sel.innerHTML = '';
-  for (const m of Object.values(MEMBERS)) {
-    const o = document.createElement('option'); o.value = m.id;
-    o.textContent = `${m.name}（${creditOf(m).card}${m.status === 'suspended' ? '・逾期停權' : ''}）`;
-    if (m.id === state.memberId) o.selected = true; sel.appendChild(o);
+  // 模擬合作電商（XMART GO）的商品資料
+  function demoProducts() {
+    return {
+      P001: { id: 'P001', name: 'AirPure 智慧空氣清淨機 Pro', brand: 'AirPure', spec: '適用 12 坪 / HEPA H13 / App 遠端控制', price: 15900, currency: 'TWD', stock: 23, hue: 200, image: 'https://picsum.photos/seed/airpure/800/800' },
+      P002: { id: 'P002', name: 'NovaBook 14 吋輕薄筆電', brand: 'Nova', spec: '14" 2.8K OLED / 16GB / 512GB SSD', price: 32900, currency: 'TWD', stock: 8, hue: 260, image: 'https://picsum.photos/seed/novabook/800/800' },
+      P003: { id: 'P003', name: 'ErgoChair 人體工學椅', brand: 'Ergo', spec: '網布椅背 / 4D 扶手 / 腰靠可調', price: 9800, currency: 'TWD', stock: 41, hue: 150, image: 'https://picsum.photos/seed/ergochair/800/800' },
+      P004: { id: 'P004', name: 'SoundPod 真無線藍牙耳機', brand: 'SoundPod', spec: '主動降噪 / 30 小時續航', price: 1999, currency: 'TWD', stock: 120, hue: 20, image: 'https://picsum.photos/seed/soundpod/800/800' },
+      P005: { id: 'P005', name: 'HydroFlask 保溫瓶 750ml', brand: 'Hydro', spec: '316 不鏽鋼 / 24 小時保冷', price: 399, currency: 'TWD', stock: 300, hue: 330, image: 'https://picsum.photos/seed/hydro/800/800' },
+    };
   }
-  sel.addEventListener('change', () => { state.memberId = sel.value; loadQuote(); });
-}
 
-function renderMember() {
-  const q = state.quote, m = q.member, price = q.pricing.majuPrice;
-  $('cardChip').classList.toggle('diamond', m.type === 'diamond');
-  $('cardLvl').textContent = m.type === 'diamond' ? '保證金會員' : `VIP${m.level}`;
-  $('cardName').textContent = m.card + '　' + m.name;
-  $('limitLabel').textContent = m.type === 'diamond' ? '保證金購物額度（已入帳）' : '基本購物額度';
-  $('cLimit').textContent = fmt(m.baseLimit); $('cOut').textContent = fmt(m.outstanding); $('cRes').textContent = fmt(m.reserved); $('cAvail').textContent = fmt(m.available);
-  const pct = (v) => Math.min(100, (v / m.baseLimit) * 100) + '%';
-  $('barUsed').style.width = pct(m.outstanding); $('barRes').style.width = pct(m.reserved); $('barThis').style.width = pct(Math.min(price, m.available));
-  const e = q.eligibility, b = $('blocked');
-  b.hidden = e.ok;
-  if (!e.ok) b.innerHTML = e.code === 'insufficient_credit'
-    ? `<b>可用額度不足，本筆交易無法成立</b>MAJU 商城售價 ${fmt(price)}，可用額度 ${fmt(m.available)}，差額 ${fmt(e.shortfall)}。${esc(e.action)}`
-    : `<b>目前無法進行新交易</b>${esc(e.reason)}`;
-}
-function renderProduct() {
-  const q = state.quote, p = q.product;
-  $('pTile').style.cssText = tileStyle(p); $('pTile').textContent = p.brand;
-  $('pBrand').textContent = p.brand; $('pName').textContent = p.name; $('pSpec').textContent = p.spec;
-  $('mName').textContent = MERCHANT.name; $('fetchedAt').textContent = '取得時間 ' + q.fetchedAt.toLocaleTimeString('zh-TW');
-  $('majuPrice').textContent = fmt(q.pricing.majuPrice);
-}
-function renderPlans() {
-  const q = state.quote, box = $('plans'), s = SETTINGS; box.innerHTML = '';
-  if (q.member.type === 'diamond') {
-    const p = q.plans[0]; box.className = '';
-    box.innerHTML = `<div class="revolving"><div class="t">鑽石卡：不設固定期數，依每月最低應繳繳款至清償</div><p>每月 ${s.paymentDueDay} 日前至少繳 ${fmt(s.minMonthlyPayment)}，本筆預估 ${p.estimatedMonths} 個月繳清；可隨時提前還款或一次繳清。</p></div>`;
-    $('planHint').textContent = '鑽石卡不適用一般 VIP 分期期數；保證金不得自動抵扣帳款。';
-  } else {
-    box.className = 'plans';
-    const maxTerms = Math.max(...q.plans.map((p) => p.terms));
-    for (const p of q.plans) {
-      const el = document.createElement('label'); el.className = 'plan' + (p.terms === state.selectedTerms ? ' selected' : '');
-      el.innerHTML = `<input type="radio" name="terms" id="terms${p.terms}" value="${p.terms}" ${p.terms === state.selectedTerms ? 'checked' : ''}>
-        ${p.terms === maxTerms ? '<span class="best">最低月付</span>' : ''}
-        <div class="terms">${p.terms} 期</div><div class="per">每期 <b>${fmt(p.perPeriod)}</b></div><span class="zero">0 利率</span>`;
-      el.querySelector('input').addEventListener('change', () => { state.selectedTerms = p.terms; renderPlans(); renderSummary(); });
-      box.appendChild(el);
+  // ==========================================================================
+  // 價格引擎：一般 VIP 依原價區間倍率，鑽石卡固定 ×1.05，小數一律無條件進位
+  //   1–499 ×1.05；500–999 ×1.10；1,000 起每滿 1,000 再 +0.01（50,000–50,999 = ×1.60）
+  // 倍率以「百分比整數」計算，避免浮點誤差（1,500 × 1.11 用浮點會算成 1,666）。
+  // ==========================================================================
+  function vipRatePct(originalPrice) {
+    if (originalPrice <= 499) return 105;
+    if (originalPrice <= 999) return 110;
+    if (originalPrice > 50999 && SETTINGS.vipRatePctOver50999) return SETTINGS.vipRatePctOver50999;
+    return 110 + Math.floor(originalPrice / 1000);
+  }
+
+  function computeMajuPrice(originalPrice, member) {
+    const original = Math.round(Number(originalPrice));
+    const diamond = member.type === 'diamond';
+    const pct = diamond ? SETTINGS.diamondRatePct : vipRatePct(original);
+    const rate = pct / 100;
+    return {
+      price: Math.ceil((original * pct) / 100),
+      rate,
+      rule: `${diamond ? '鑽石卡固定倍率' : '一般 VIP 原價區間倍率'} ×${rate.toFixed(2)}`,
+    };
+  }
+
+  // ==========================================================================
+  // 額度：可用額度 = 等級額度（鑽石卡為已入帳保證金）− 未償還帳款 − 保留額度，最低為 0。
+  // 人工審核多給的部分不另外記帳：帳款高於等級額度時可用額度就是 0，
+  // 要繳到等級額度以內才會恢復。
+  // ==========================================================================
+  function creditOf(member) {
+    const baseLimit = member.type === 'diamond' ? member.deposit : VIP_LEVELS[member.level].limit;
+    const balance = member.outstanding + member.reserved;
+    return {
+      type: member.type,
+      level: member.type === 'vip' ? member.level : null,
+      card: member.type === 'diamond' ? '鑽石卡' : VIP_LEVELS[member.level].card,
+      baseLimit,
+      outstanding: member.outstanding,
+      reserved: member.reserved,
+      available: Math.max(0, baseLimit - balance),
+      overBy: Math.max(0, balance - baseLimit),
+      paidPeriods: member.paidPeriods || 0,
+    };
+  }
+
+  // ==========================================================================
+  // 帳戶狀態：KYC 與逾期分級
+  // ==========================================================================
+  function standing(member) {
+    if (member.kyc !== 'approved') {
+      return { code: 'kyc', canBuy: false, label: 'KYC 未通過', reason: '身分驗證（KYC）尚未通過，無法使用 MAJU 服務。' };
     }
-    $('planHint').textContent = `可選期數依會員等級（VIP${q.member.level}）由後台設定；每期金額為售價平均後取整數，尾差併入最後一期。`;
+    const d = member.overdueDays || 0;
+    const vip = member.type === 'vip';
+    if (d >= SETTINGS.overdueLegalDays) {
+      return { code: 'legal', canBuy: false, label: `逾期 ${d} 天・永久停止交易`,
+        reason: `帳款已逾期 ${d} 天，帳戶已停止所有交易並進入法律程序。請聯繫 MAJU 客服。` };
+    }
+    if (d >= SETTINGS.overdueLockDays) {
+      return { code: 'locked', canBuy: false, label: `逾期 ${d} 天・暫停消費`,
+        reason: `帳款已逾期 ${d} 天，已暫停新消費${vip ? '並調降一個會員等級' : ''}。繳清逾期款項並正式入帳後恢復消費${vip ? '，升級需重新累積 3 個月正常繳款' : ''}。` };
+    }
+    if (d > 0) {
+      return { code: 'late', canBuy: true, label: `逾期 ${d} 天`,
+        warning: `您有帳款已逾期 ${d} 天，請儘快繳款。逾期達 ${SETTINGS.overdueLockDays} 天將暫停新消費${vip ? '並調降會員等級' : ''}。` };
+    }
+    return { code: 'ok', canBuy: true, label: '' };
   }
-  $('minNotice').textContent = `提醒：帳戶每月 ${s.paymentDueDay} 日前須以單筆繳款完成最低應繳 ${fmt(s.minMonthlyPayment)}（含本筆與其他未償還帳款）；任何逾期將立即暫停新交易。`;
-}
-function renderSummary() {
-  const q = state.quote, plan = currentPlan();
-  $('sName').textContent = q.product.name; $('sPrice').textContent = fmt(q.pricing.majuPrice);
-  $('sTerms').textContent = plan.kind === 'revolving' ? '鑽石卡每月最低應繳' : `${plan.terms} 期・0 利率`;
-  $('sPer').textContent = fmt(plan.perPeriod) + (plan.lastPeriod !== plan.perPeriod ? `（末期 ${fmt(plan.lastPeriod)}）` : '');
-  $('sAfter').textContent = fmt(Math.max(0, q.pricing.availableAfter)); $('sTotal').textContent = fmt(plan.total);
-  $('schedule').innerHTML = scheduleRows(plan);
-  const btn = $('submitBtn'); btn.disabled = !q.eligibility.ok;
-  btn.textContent = q.eligibility.ok ? '確認交易' : (q.eligibility.code === 'insufficient_credit' ? '額度不足，無法交易' : '暫停新交易');
-}
 
-async function loadQuote() {
-  showMaju('loadingView'); $('submitErr').textContent = ''; $('cancelMsg').textContent = '';
-  const member = MEMBERS[state.memberId];
-  const product = await fetchPartnerProduct(state.productId);
-  if (!product) return fail('合作商城查無此商品');
-  state.quote = buildQuote(product, member);
-  state.selectedTerms = member.type === 'diamond' ? null : Math.max(...state.quote.plans.map((p) => p.terms));
-  renderMember(); renderProduct(); renderPlans(); renderSummary();
-  showMaju('checkoutView');
-}
+  // ==========================================================================
+  // 繳款：不分期數。每月最低應繳 3,000（帳款不足 3,000 時繳清餘額），可多繳或一次繳清。
+  // ==========================================================================
+  function dueDates(count, now) {
+    const today = now || new Date();
+    const y = today.getFullYear();
+    const m = today.getMonth() + (today.getDate() >= SETTINGS.paymentDueDay ? 1 : 0);
+    const out = [];
+    for (let i = 0; i < count; i++) {
+      const d = new Date(y, m + i, SETTINGS.paymentDueDay); // 本地時區，避免轉 UTC 後日期退一天
+      out.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
+    }
+    return out;
+  }
 
-async function submitOrder() {
-  const phone = $('phone').value.trim();
-  if (!/^09\d{8}$/.test(phone)) { $('phoneErr').textContent = '請輸入 09 開頭的 10 碼手機號碼'; $('phone').focus(); return; }
-  $('phoneErr').textContent = '';
-  const btn = $('submitBtn'); btn.disabled = true; btn.textContent = '建立訂單中…';
-  // 下單時重新向合作商城取價並重算，不信任畫面上的金額
-  const member = MEMBERS[state.memberId];
-  const product = await fetchPartnerProduct(state.productId);
-  const q = buildQuote(product, member);
-  if (!q.eligibility.ok) { $('submitErr').textContent = q.eligibility.reason; btn.disabled = false; btn.textContent = '確認交易'; return; }
-  const plan = member.type === 'diamond' ? q.plans[0] : q.plans.find((p) => p.terms === state.selectedTerms);
-  member.reserved += q.pricing.majuPrice; // 保留額度
-  const orderId = 'MJ' + Date.now().toString(36).toUpperCase() + Math.floor(Math.random() * 65536).toString(16).toUpperCase().padStart(4, '0');
-  const order = { orderId, memberId: member.id, product, majuPrice: q.pricing.majuPrice, plan, phone, status: 'pending_payment', createdAt: new Date() };
-  ORDERS.set(orderId, order); state.lastOrder = order;
-  const after = creditOf(member);
-  $('doneOrderId').textContent = orderId;
-  $('doneSummary').textContent = `${product.name}　MAJU 商城售價 ${fmt(order.majuPrice)}。${plan.kind === 'revolving' ? `每月最低應繳 ${fmt(plan.perPeriod)}，預估 ${plan.estimatedMonths} 個月繳清` : `${plan.terms} 期 0 利率，每期 ${fmt(plan.perPeriod)}`}。`;
-  $('doneCredit').textContent = `已保留額度 ${fmt(order.majuPrice)}，目前剩餘可用額度 ${fmt(after.available)}。付款確認後訂單將轉為已付款；審核與帳單通知將發送至 ${phone}。`;
-  $('doneSchedule').innerHTML = scheduleRows(plan);
-  $('cancelBtn').hidden = false;
-  showMaju('doneView'); window.scrollTo(0, 0);
-  btn.disabled = false; btn.textContent = '確認交易';
-}
-function cancelOrder() {
-  const o = state.lastOrder; if (!o || o.status === 'cancelled') return;
-  const member = MEMBERS[o.memberId]; member.reserved = Math.max(0, member.reserved - o.majuPrice); o.status = 'cancelled';
-  $('cancelMsg').textContent = `訂單 ${o.orderId} 已取消，額度已釋放。目前可用額度 ${fmt(creditOf(member).available)}。`;
-  $('cancelBtn').hidden = true;
-}
+  // 以「每月只繳最低應繳」試算繳清時程
+  function repaymentOf(balance, now) {
+    const min = SETTINGS.minMonthlyPayment;
+    const months = Math.ceil(balance / min);
+    let remain = balance;
+    const schedule = dueDates(months, now).map((dueDate, i) => {
+      const amount = Math.min(min, remain);
+      remain -= amount;
+      return { period: i + 1, dueDate, amount, remaining: remain };
+    });
+    return {
+      balance,
+      minPayment: Math.min(min, balance),
+      dueDay: SETTINGS.paymentDueDay,
+      firstDueDate: schedule.length ? schedule[0].dueDate : null,
+      estimatedMonths: months,
+      schedule,
+    };
+  }
 
-$('submitBtn').addEventListener('click', submitOrder);
-$('cancelBtn').addEventListener('click', cancelOrder);
-$('backBtn').addEventListener('click', goShop);
-$('doneBackBtn').addEventListener('click', goShop);
-$('buyerForm').addEventListener('submit', (e) => { e.preventDefault(); submitOrder(); });
+  // 會員自填繳款金額的檢核：最低應繳 ≤ 金額 ≤ 帳款（不能預繳超過帳款）
+  function validatePayment(amount, balance) {
+    const min = Math.min(SETTINGS.minMonthlyPayment, balance);
+    const n = Number(amount);
+    if (!Number.isInteger(n) || n <= 0) return { ok: false, min, max: balance, reason: '請輸入整數金額' };
+    if (n < min) return { ok: false, min, max: balance, reason: `最低應繳 ${nt(min)}` };
+    if (n > balance) return { ok: false, min, max: balance, reason: `不能超過目前帳款 ${nt(balance)}` };
+    return { ok: true, min, max: balance };
+  }
 
-renderShop(); renderMemberSelect(); route();
+  // ==========================================================================
+  // 額度不足時：一般 VIP 可針對單筆訂單申請人工審核
+  // ==========================================================================
+  function overLimitOf(member, credit, majuPrice, st) {
+    const shortfall = majuPrice - credit.available;
+    const extra = member.outstanding + member.reserved + majuPrice - credit.baseLimit; // 成立後會比等級額度多出多少
+    const base = { extra, maxExtra: SETTINGS.overLimitMaxExtra };
+    if (member.type === 'diamond') {
+      return { ...base, canApply: false, message: `鑽石卡額度依保證金計算，請先追加保證金至少 ${nt(shortfall)}，入帳後再進行交易。` };
+    }
+    if (st.code === 'late') {
+      return { ...base, canApply: false, message: '帳款逾期中，繳清逾期款項後才能申請人工審核。' };
+    }
+    if (credit.overBy > 0) {
+      // 已經用過人工審核的超額：多給的部分沒還完之前，連小額也不能再買
+      return { ...base, canApply: false, message: `目前帳款已高於等級額度 ${nt(credit.overBy)}。要先把帳款繳到等級額度以內，才能再消費。` };
+    }
+    if ((member.paidPeriods || 0) < SETTINGS.overLimitMinPaidPeriods) {
+      return { ...base, canApply: false, message: `您還沒有繳款紀錄。完成至少 ${SETTINGS.overLimitMinPaidPeriods} 期繳款後，才能申請人工審核。` };
+    }
+    if (extra > SETTINGS.overLimitMaxExtra) {
+      return { ...base, canApply: false, message: `這筆訂單會比等級額度多 ${nt(extra)}，超過人工審核上限 ${nt(SETTINGS.overLimitMaxExtra)}，無法申請。` };
+    }
+    return { ...base, canApply: true,
+      message: `您可以針對這一筆訂單申請人工審核，最多可比等級額度多 ${nt(SETTINGS.overLimitMaxExtra)}。核准後，要先把帳款繳到等級額度以內，才會恢復可用額度。` };
+  }
+
+  // ==========================================================================
+  // 報價（查詢與下單共用；下單時重新計算，不信任前端金額）
+  // 原價、倍率與計算方式放在 _calc，只留在後端與訂單快照，不回傳給顧客端。
+  // ==========================================================================
+  function buildQuote(merchant, product, member, now) {
+    const original = Math.round(Number(product.price));
+    const pricing = computeMajuPrice(original, member);
+    const credit = creditOf(member);
+    const st = standing(member);
+    const balanceAfter = member.outstanding + member.reserved + pricing.price;
+    const sufficient = pricing.price <= credit.available;
+
+    let eligibility;
+    if (!st.canBuy) eligibility = { ok: false, code: 'blocked', reason: st.reason };
+    else if (sufficient) eligibility = { ok: true, warning: st.warning || null };
+    else {
+      eligibility = { ok: false, code: 'insufficient_credit', reason: '可用額度不足',
+        shortfall: pricing.price - credit.available, overLimit: overLimitOf(member, credit, pricing.price, st) };
+    }
+
+    return {
+      merchant: { id: merchant.id, name: merchant.name, returnUrl: merchant.returnUrl || null },
+      product: { id: product.id, name: product.name, brand: product.brand, spec: product.spec, stock: product.stock, hue: product.hue, currency: product.currency || 'TWD' },
+      member: { id: member.id, name: member.name, ...credit },
+      pricing: { majuPrice: pricing.price, availableAfter: Math.max(0, credit.baseLimit - balanceAfter) },
+      _calc: { originalPrice: original, rate: pricing.rate, rule: pricing.rule },
+      repayment: repaymentOf(balanceAfter, now),
+      eligibility,
+      settings: {
+        minMonthlyPayment: SETTINGS.minMonthlyPayment, paymentDueDay: SETTINGS.paymentDueDay,
+        overLimitMaxExtra: SETTINGS.overLimitMaxExtra, overdueLockDays: SETTINGS.overdueLockDays, overdueLegalDays: SETTINGS.overdueLegalDays,
+      },
+      fetchedAt: (now || new Date()).toISOString(),
+    };
+  }
+
+  // ==========================================================================
+  // 記憶體內的會員、訂單與人工審核申請（示範用）。
+  // 每個方法回傳 { status, body }，伺服器直接當 HTTP 回應，單檔示範頁當模擬 API。
+  // ==========================================================================
+  function createStore() {
+    const members = demoMembers();
+    const orders = new Map();
+    const requests = new Map();
+    const newId = (prefix) => prefix + Date.now().toString(36).toUpperCase() + Math.floor(Math.random() * 65536).toString(16).toUpperCase().padStart(4, '0');
+    const err = (status, error, extra) => ({ status, body: { error, ...(extra || {}) } });
+
+    const publicQuote = (q) => { const { _calc, ...rest } = q; return rest; };
+    const publicOrder = (o) => { const { originalPrice, rate, rule, ...snapshot } = o.priceSnapshot; return { ...o, priceSnapshot: snapshot }; };
+    const publicRequest = (r) => ({
+      requestId: r.requestId, status: r.status, memberId: r.memberId, productName: r.product.name, majuPrice: r.majuPrice,
+      levelLimit: r.levelLimit, balanceAfter: r.balanceAfter, extra: r.extra, phone: r.buyer.phone, createdAt: r.createdAt, reviewedAt: r.reviewedAt || null,
+    });
+
+    function check(merchant, product, memberId, buyer, needBuyer) {
+      const member = members[memberId];
+      if (!merchant) return err(400, '未知的合作商城');
+      if (!member) return err(401, '請先登入 MAJU 會員');
+      if (!product) return err(404, '合作商城查無此商品');
+      if (needBuyer) {
+        if (!buyer || !/^09\d{8}$/.test(String(buyer.phone || ''))) return err(400, '請填寫 09 開頭的 10 碼手機號碼');
+        if (product.stock <= 0) return err(409, '商品已無庫存');
+      }
+      return { member };
+    }
+
+    function makeOrder(merchant, product, member, buyer, quote, overLimit) {
+      member.reserved += quote.pricing.majuPrice; // 保留額度；取消後釋放
+      const order = {
+        orderId: newId('MJ'),
+        channel: 'xmart_go_online',
+        merchant: merchant.id,
+        merchantName: merchant.name,
+        memberId: member.id,
+        product: { id: product.id, name: product.name, brand: product.brand, spec: product.spec, hue: product.hue },
+        // 價格快照與計算紀錄：倍率日後調整不影響已成立訂單
+        priceSnapshot: { originalPrice: quote._calc.originalPrice, majuPrice: quote.pricing.majuPrice, rate: quote._calc.rate, rule: quote._calc.rule, memberType: member.type, memberLevel: member.level || null },
+        repayment: quote.repayment,
+        overLimit: overLimit || null,
+        buyer: { name: member.name, phone: buyer.phone, email: buyer.email || '' },
+        creditAfter: creditOf(member),
+        status: 'pending_payment',
+        createdAt: new Date().toISOString(),
+      };
+      orders.set(order.orderId, order);
+      return order;
+    }
+
+    return {
+      members, orders, requests,
+
+      listMembers() {
+        return Object.values(members).map((m) => {
+          const st = standing(m);
+          return { id: m.id, name: m.name, card: creditOf(m).card, tag: st.label || (m.paidPeriods ? '' : '尚未繳過款') };
+        });
+      },
+
+      quote(merchant, product, memberId) {
+        const c = check(merchant, product, memberId);
+        if (!c.member) return c;
+        return { status: 200, body: publicQuote(buildQuote(merchant, product, c.member)) };
+      },
+
+      // 額度足夠：直接成立訂單並保留額度
+      createOrder(merchant, product, memberId, buyer) {
+        const c = check(merchant, product, memberId, buyer, true);
+        if (!c.member) return c;
+        const quote = buildQuote(merchant, product, c.member);
+        if (!quote.eligibility.ok) return err(403, quote.eligibility.reason, { code: quote.eligibility.code });
+        const order = makeOrder(merchant, product, c.member, buyer, quote, null);
+        return { status: 201, body: { order: publicOrder(order), returnUrl: merchant.returnUrl || null }, log: `order ${order.orderId}: ${c.member.id} ${product.name} 原價 ${quote._calc.originalPrice} → MAJU ${quote.pricing.majuPrice}（${quote._calc.rule}）` };
+      },
+
+      cancelOrder(orderId) {
+        const order = orders.get(orderId);
+        if (!order) return err(404, '查無此訂單');
+        const member = members[order.memberId];
+        if (order.status !== 'cancelled') {
+          member.reserved = Math.max(0, member.reserved - order.priceSnapshot.majuPrice);
+          order.status = 'cancelled';
+          order.cancelledAt = new Date().toISOString();
+        }
+        return { status: 200, body: { order: publicOrder(order), creditAfter: creditOf(member) } };
+      },
+
+      // 額度不足：送出單筆訂單的人工審核申請（此時不保留額度、訂單尚未成立）
+      applyOverLimit(merchant, product, memberId, buyer) {
+        const c = check(merchant, product, memberId, buyer, true);
+        if (!c.member) return c;
+        const quote = buildQuote(merchant, product, c.member);
+        const e = quote.eligibility;
+        if (e.ok) return err(409, '可用額度足夠，請直接確認交易');
+        if (e.code !== 'insufficient_credit') return err(403, e.reason, { code: e.code });
+        if (!e.overLimit.canApply) return err(403, e.overLimit.message, { code: 'over_limit_not_allowed' });
+        const request = {
+          requestId: newId('OL'), status: 'pending_review', memberId: c.member.id, merchant, product, quote, buyer,
+          majuPrice: quote.pricing.majuPrice, levelLimit: quote.member.baseLimit, balanceAfter: quote.repayment.balance, extra: e.overLimit.extra,
+          createdAt: new Date().toISOString(),
+        };
+        requests.set(request.requestId, request);
+        return { status: 201, body: { request: publicRequest(request) } };
+      },
+
+      // 後台審核（示範用按鈕呼叫）。核准才成立訂單。
+      reviewOverLimit(requestId, approve) {
+        const r = requests.get(requestId);
+        if (!r) return err(404, '查無此申請');
+        if (r.status !== 'pending_review') return err(409, '這筆申請已經審核過了');
+        const member = members[r.memberId];
+        r.reviewedAt = new Date().toISOString();
+        if (!approve) {
+          r.status = 'rejected';
+          return { status: 200, body: { request: publicRequest(r), creditAfter: creditOf(member) } };
+        }
+        // 核准當下重新檢查：會員狀態與超額上限
+        const st = standing(member);
+        const extraNow = member.outstanding + member.reserved + r.majuPrice - creditOf(member).baseLimit;
+        if (!st.canBuy || st.code === 'late') { r.status = 'rejected'; return err(409, '會員目前有逾期帳款，無法核准'); }
+        if (extraNow > SETTINGS.overLimitMaxExtra) { r.status = 'rejected'; return err(409, `目前帳款已變動，超過人工審核上限 ${nt(SETTINGS.overLimitMaxExtra)}，無法核准`); }
+        r.status = 'approved';
+        const order = makeOrder(r.merchant, r.product, member, r.buyer, r.quote, { requestId: r.requestId, extra: extraNow });
+        order.repayment = repaymentOf(member.outstanding + member.reserved);
+        return { status: 200, body: { request: publicRequest(r), order: publicOrder(order), returnUrl: r.merchant.returnUrl || null, creditAfter: creditOf(member) } };
+      },
+    };
+  }
+
+  return { SETTINGS, VIP_LEVELS, nt, demoMembers, demoProducts, vipRatePct, computeMajuPrice, creditOf, standing, repaymentOf, validatePayment, buildQuote, createStore };
+});
+
+// MAJU 確認頁的畫面邏輯。原型伺服器版與單檔示範頁共用。
+// 這裡只負責顯示：售價、額度、資格與繳款試算都由 api 回傳，前端不自行計價。
+// api 介面（皆為 async，失敗時 throw Error）：
+//   members() / quote(productId, memberId) / createOrder(productId, memberId, buyer) / cancelOrder(orderId)
+//   applyOverLimit(productId, memberId, buyer) / reviewOverLimit(requestId, approve)
+(function (root) {
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n) => 'NT$ ' + Number(n).toLocaleString('zh-TW');
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const tileStyle = (p) => `background: linear-gradient(135deg, hsl(${p.hue} 60% 55%), hsl(${p.hue + 40} 55% 35%))`;
+  const VIEWS = ['loadingView', 'errorView', 'checkoutView', 'pendingView', 'doneView'];
+
+  let api = null;
+  let opts = {};
+  const state = { productId: null, memberId: null, quote: null, order: null, request: null, loadSeq: 0 };
+
+  function show(view) { for (const id of VIEWS) $(id).hidden = id !== view; }
+  function fail(msg) { $('errorView').innerHTML = `<b>無法載入頁面</b><br>${esc(msg)}`; show('errorView'); }
+  function scheduleRows(r) { return r.schedule.map((s) => `<tr><td>第 ${s.period} 個月</td><td>${s.dueDate}</td><td>${fmt(s.amount)}</td></tr>`).join(''); }
+  const limitName = (m) => (m.type === 'diamond' ? '保證金額度' : '等級額度');
+
+  async function renderMemberSelect() {
+    const sel = $('memberSel');
+    let list;
+    try { list = await api.members(); } catch { return; }
+    sel.innerHTML = '';
+    for (const m of list) {
+      const o = document.createElement('option');
+      o.value = m.id;
+      o.textContent = `${m.name}（${m.card}${m.tag ? '・' + m.tag : ''}）`;
+      if (m.id === state.memberId) o.selected = true;
+      sel.appendChild(o);
+    }
+  }
+
+  function renderMember() {
+    const q = state.quote, m = q.member, price = q.pricing.majuPrice;
+    $('cardChip').classList.toggle('diamond', m.type === 'diamond');
+    $('cardLvl').textContent = m.type === 'diamond' ? '保證金會員' : `VIP${m.level}`;
+    $('cardName').textContent = m.card + '　' + m.name;
+    $('limitLabel').textContent = m.type === 'diamond' ? '保證金額度（已入帳）' : '等級額度';
+    $('cLimit').textContent = fmt(m.baseLimit);
+    $('cOut').textContent = fmt(m.outstanding);
+    $('cRes').textContent = fmt(m.reserved);
+    $('cAvail').textContent = fmt(m.available);
+    const pct = (v) => Math.min(100, (v / m.baseLimit) * 100) + '%';
+    $('barUsed').style.width = pct(m.outstanding);
+    $('barRes').style.width = pct(m.reserved);
+    $('barThis').style.width = pct(Math.min(price, m.available));
+
+    const e = q.eligibility, b = $('blocked');
+    b.hidden = e.ok && !e.warning;
+    if (e.ok && e.warning) b.innerHTML = `<b>帳款逾期提醒</b>${esc(e.warning)}`;
+    else if (!e.ok && e.code === 'insufficient_credit') {
+      b.innerHTML = `<b>可用額度不足</b>MAJU 商城售價 ${fmt(price)}，可用額度 ${fmt(m.available)}，差額 ${fmt(e.shortfall)}。${esc(e.overLimit.message)}`;
+    } else if (!e.ok) b.innerHTML = `<b>目前無法進行新交易</b>${esc(e.reason)}`;
+  }
+
+  function renderProduct() {
+    const q = state.quote, p = q.product;
+    $('pTile').style.cssText = tileStyle(p);
+    $('pTile').textContent = p.brand;
+    $('pBrand').textContent = p.brand;
+    $('pName').textContent = p.name;
+    $('pSpec').textContent = p.spec;
+    $('mName').textContent = q.merchant.name;
+    $('fetchedAt').textContent = '取得時間 ' + new Date(q.fetchedAt).toLocaleTimeString('zh-TW');
+    $('majuPrice').textContent = fmt(q.pricing.majuPrice);
+  }
+
+  function renderPay() {
+    const q = state.quote, r = q.repayment, s = q.settings, vip = q.member.type === 'vip';
+    $('payTitle').textContent = `每月最低應繳 ${fmt(s.minMonthlyPayment)}，繳到清償為止`;
+    $('payDesc').textContent = `每月 ${s.paymentDueDay} 日前單筆至少繳 ${fmt(s.minMonthlyPayment)}；帳款不到 ${fmt(s.minMonthlyPayment)} 時，繳清餘額即可。可以多繳或一次繳清，繳多少就恢復多少可用額度。${vip ? '' : '保證金不會自動抵扣帳款。'}`;
+    $('pBalance').textContent = fmt(r.balance);
+    $('pMin').textContent = fmt(r.minPayment);
+    $('pMonths').textContent = `約 ${r.estimatedMonths} 個月繳清`;
+    $('pFirst').textContent = r.firstDueDate;
+    $('minNotice').textContent = `提醒：逾期達 ${s.overdueLockDays} 天將暫停新消費${vip ? '並調降會員等級' : ''}；逾期達 ${s.overdueLegalDays} 天將停止所有交易並依法追償。`;
+  }
+
+  function renderSummary() {
+    const q = state.quote, r = q.repayment, e = q.eligibility;
+    $('sName').textContent = q.product.name;
+    $('sPrice').textContent = fmt(q.pricing.majuPrice);
+    $('sMin').textContent = fmt(q.settings.minMonthlyPayment);
+    $('sMonths').textContent = `約 ${r.estimatedMonths} 個月繳清`;
+    $('sBalance').textContent = fmt(r.balance);
+    $('sAfter').textContent = fmt(q.pricing.availableAfter);
+    $('sTotal').textContent = fmt(q.pricing.majuPrice);
+    $('schedule').innerHTML = scheduleRows(r);
+    const btn = $('submitBtn');
+    if (e.ok) { btn.disabled = false; btn.dataset.mode = 'order'; btn.textContent = '確認交易'; }
+    else if (e.code === 'insufficient_credit' && e.overLimit.canApply) { btn.disabled = false; btn.dataset.mode = 'apply'; btn.textContent = '申請人工審核'; }
+    else { btn.disabled = true; btn.dataset.mode = ''; btn.textContent = e.code === 'insufficient_credit' ? '額度不足，無法交易' : '暫停新交易'; }
+  }
+
+  async function load(productId, memberId) {
+    if (productId) state.productId = productId;
+    if (memberId) state.memberId = memberId;
+    const seq = ++state.loadSeq;
+    show('loadingView');
+    $('submitErr').textContent = ''; $('cancelMsg').textContent = ''; $('reqMsg').textContent = '';
+    $('memberSel').value = state.memberId;
+    if (!state.productId) return fail('缺少合作商城代號或商品編號，請從合作商城的「MAJU 分期付款」按鈕進入。');
+    let q;
+    try { q = await api.quote(state.productId, state.memberId); }
+    catch (e) { if (seq === state.loadSeq) fail(e.message); return; }
+    if (seq !== state.loadSeq) return; // 載入途中又切換了會員或商品
+    state.quote = q;
+    renderMember(); renderProduct(); renderPay(); renderSummary();
+    show('checkoutView');
+  }
+
+  function readBuyer() {
+    const phone = $('phone').value.trim();
+    if (!/^09\d{8}$/.test(phone)) { $('phoneErr').textContent = '請輸入 09 開頭的 10 碼手機號碼'; $('phone').focus(); return null; }
+    $('phoneErr').textContent = '';
+    return { phone, email: $('email').value.trim() };
+  }
+
+  async function submit() {
+    const btn = $('submitBtn'), mode = btn.dataset.mode;
+    if (!mode || btn.disabled) return;
+    const buyer = readBuyer();
+    if (!buyer) return;
+    $('submitErr').textContent = '';
+    btn.disabled = true;
+    btn.textContent = mode === 'apply' ? '送出申請中…' : '建立訂單中…';
+    try {
+      if (mode === 'apply') {
+        const { request } = await api.applyOverLimit(state.productId, state.memberId, buyer);
+        state.request = request;
+        renderPending();
+        show('pendingView');
+      } else {
+        const data = await api.createOrder(state.productId, state.memberId, buyer);
+        state.order = data.order;
+        renderDone();
+        show('doneView');
+      }
+      window.scrollTo(0, 0);
+    } catch (e) {
+      $('submitErr').textContent = e.message;
+    } finally {
+      renderSummary(); // 還原按鈕狀態
+    }
+  }
+
+  function renderPending() {
+    const r = state.request;
+    $('reqTitle').textContent = '已送出人工審核申請';
+    $('reqId').textContent = r.requestId;
+    $('reqSummary').textContent = `${r.productName}　MAJU 商城售價 ${fmt(r.majuPrice)}。成立後帳款 ${fmt(r.balanceAfter)}，比等級額度 ${fmt(r.levelLimit)} 多 ${fmt(r.extra)}。`;
+    $('reqNote').textContent = `訂單尚未成立，額度也還沒有保留。審核結果會以簡訊通知 ${r.phone}。核准後，要先把帳款繳到等級額度以內，才會恢復可用額度。`;
+    $('approveBtn').hidden = false; $('rejectBtn').hidden = false;
+    $('reqMsg').textContent = '';
+  }
+
+  async function review(approve) {
+    const r = state.request;
+    if (!r) return;
+    $('approveBtn').disabled = true; $('rejectBtn').disabled = true;
+    try {
+      const data = await api.reviewOverLimit(r.requestId, approve);
+      if (approve) {
+        state.order = data.order;
+        renderDone();
+        show('doneView');
+        window.scrollTo(0, 0);
+      } else {
+        $('reqTitle').textContent = '人工審核未通過';
+        $('reqMsg').textContent = '申請已駁回，訂單沒有成立，額度不受影響。';
+        $('approveBtn').hidden = true; $('rejectBtn').hidden = true;
+      }
+    } catch (e) {
+      $('reqMsg').textContent = e.message;
+      $('approveBtn').hidden = true; $('rejectBtn').hidden = true;
+    } finally {
+      $('approveBtn').disabled = false; $('rejectBtn').disabled = false;
+    }
+  }
+
+  function renderDone() {
+    const o = state.order, c = o.creditAfter, r = o.repayment;
+    const balance = c.outstanding + c.reserved;
+    $('doneTitle').textContent = o.overLimit ? '人工審核已核准，訂單已建立' : '訂單已建立，額度已保留';
+    $('doneOrderId').textContent = o.orderId;
+    $('doneSummary').textContent = `${o.product.name}　MAJU 商城售價 ${fmt(o.priceSnapshot.majuPrice)}。每月最低應繳 ${fmt(r.minPayment)}，只繳最低應繳約 ${r.estimatedMonths} 個月繳清。`;
+    $('doneCredit').textContent = (balance > c.baseLimit
+      ? `目前帳款 ${fmt(balance)}，高於${limitName(c)} ${fmt(c.baseLimit)}，可用額度為 ${fmt(0)}。再繳 ${fmt(balance - c.baseLimit)} 以上才會開始恢復可用額度。`
+      : `已保留額度 ${fmt(o.priceSnapshot.majuPrice)}，目前剩餘可用額度 ${fmt(c.available)}。`)
+      + `帳單通知會發送至 ${o.buyer.phone}。`;
+    $('doneSchedule').innerHTML = scheduleRows(r);
+    // 繳款試算：最低應繳 ≤ 金額 ≤ 帳款
+    const min = Math.min(r.minPayment, balance);
+    $('calcBox').hidden = false;
+    $('payAmt').value = String(min);
+    $('payRange').textContent = `可輸入 ${fmt(min)} 到 ${fmt(balance)}。不能超過帳款，也就是不能預繳。`;
+    $('payOut').textContent = ''; $('payOut').classList.remove('bad');
+    $('cancelBtn').hidden = false;
+    $('cancelMsg').textContent = '';
+  }
+
+  function calcPayment() {
+    const o = state.order;
+    if (!o) return;
+    const c = o.creditAfter, balance = c.outstanding + c.reserved, min = Math.min(o.repayment.minPayment, balance);
+    const out = $('payOut');
+    const raw = $('payAmt').value.trim().replace(/,/g, '');
+    const amt = /^\d+$/.test(raw) ? Number(raw) : NaN;
+    out.classList.toggle('bad', !(amt >= min && amt <= balance));
+    if (!Number.isInteger(amt)) { out.textContent = '請輸入整數金額。'; return; }
+    if (amt < min) { out.textContent = `最低應繳是 ${fmt(min)}。`; return; }
+    if (amt > balance) { out.textContent = `不能超過目前帳款 ${fmt(balance)}。`; return; }
+    const after = balance - amt, avail = Math.max(0, c.baseLimit - after);
+    out.textContent = after === 0
+      ? `繳款後帳款 ${fmt(0)}，全部繳清。可用額度恢復為 ${fmt(avail)}。`
+      : after > c.baseLimit
+        ? `繳款後帳款 ${fmt(after)}，仍高於${limitName(c)} ${fmt(c.baseLimit)}，可用額度還是 ${fmt(0)}。還要再繳 ${fmt(after - c.baseLimit)} 以上。`
+        : `繳款後帳款 ${fmt(after)}，可用額度 ${fmt(avail)}。`;
+  }
+
+  async function cancelOrder() {
+    const o = state.order;
+    if (!o) return;
+    try {
+      const data = await api.cancelOrder(o.orderId);
+      $('cancelMsg').textContent = `訂單 ${o.orderId} 已取消，額度已釋放。目前可用額度 ${fmt(data.creditAfter.available)}。`;
+      $('cancelBtn').hidden = true;
+      $('calcBox').hidden = true;
+    } catch (e) { $('cancelMsg').textContent = e.message; }
+  }
+
+  function back() { if (opts.onBack) opts.onBack(state.quote); }
+
+  function init(options) {
+    opts = options || {};
+    api = opts.api;
+    state.productId = opts.productId || null;
+    state.memberId = opts.memberId || 'm_vip3';
+    $('submitBtn').addEventListener('click', submit);
+    $('buyerForm').addEventListener('submit', (e) => { e.preventDefault(); submit(); });
+    $('backBtn').addEventListener('click', back);
+    $('doneBackBtn').addEventListener('click', back);
+    $('reqBackBtn').addEventListener('click', back);
+    $('cancelBtn').addEventListener('click', cancelOrder);
+    $('approveBtn').addEventListener('click', () => review(true));
+    $('rejectBtn').addEventListener('click', () => review(false));
+    $('payCalcBtn').addEventListener('click', calcPayment);
+    $('payAmt').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); calcPayment(); } });
+    $('memberSel').addEventListener('change', () => {
+      state.memberId = $('memberSel').value;
+      if (opts.onMemberChange) opts.onMemberChange(state.memberId);
+      load();
+    });
+    return renderMemberSelect();
+  }
+
+  root.MajuUI = { init, load };
+})(typeof self !== 'undefined' ? self : this);
+
+// ============================================================================
+// 單檔示範頁：沒有伺服器，以頁面內的 MajuCore 模擬 MAJU 後端與合作電商商品 API。
+// ============================================================================
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n) => 'NT$ ' + Number(n).toLocaleString('zh-TW');
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const tileStyle = (p) => `background: linear-gradient(135deg, hsl(${p.hue} 60% 55%), hsl(${p.hue + 40} 55% 35%))`;
+
+  const MERCHANT = { id: 'xmart_go', name: 'XMART GO' };
+  const PARTNER_PRODUCTS = MajuCore.demoProducts();
+  const store = MajuCore.createStore();
+
+  // 模擬：MAJU 後端即時呼叫合作電商商品 API（含網路延遲）
+  const fetchPartnerProduct = (id) => new Promise((resolve) => setTimeout(() => resolve(PARTNER_PRODUCTS[id] || null), 700));
+  const unwrap = (r) => { if (r.status >= 400) throw new Error(r.body.error); return r.body; };
+  const api = {
+    members: async () => store.listMembers(),
+    quote: async (pid, mid) => unwrap(store.quote(MERCHANT, await fetchPartnerProduct(pid), mid)),
+    // 下單與申請都重新向合作商城取價並重算，不信任畫面上的金額
+    createOrder: async (pid, mid, buyer) => unwrap(store.createOrder(MERCHANT, await fetchPartnerProduct(pid), mid, buyer)),
+    cancelOrder: async (orderId) => unwrap(store.cancelOrder(orderId)),
+    applyOverLimit: async (pid, mid, buyer) => unwrap(store.applyOverLimit(MERCHANT, await fetchPartnerProduct(pid), mid, buyer)),
+    reviewOverLimit: async (requestId, approve) => unwrap(store.reviewOverLimit(requestId, approve)),
+  };
+
+  let productId = null;
+  function route() {
+    const checkout = location.hash === '#checkout' && productId;
+    $('shopView').hidden = !!checkout;
+    $('majuView').hidden = !checkout;
+    if (checkout) MajuUI.load(productId);
+    window.scrollTo(0, 0);
+  }
+  function goShop() { if (location.hash === '#shop') route(); else location.hash = '#shop'; }
+  function goCheckout(id) { productId = id; if (location.hash === '#checkout') route(); else location.hash = '#checkout'; }
+  window.addEventListener('hashchange', route);
+
+  function renderShop() {
+    const grid = $('grid');
+    grid.innerHTML = '';
+    for (const p of Object.values(PARTNER_PRODUCTS)) {
+      const el = document.createElement('article');
+      el.className = 'pcard';
+      el.innerHTML = `
+        <div class="tile" style="${tileStyle(p)}">${esc(p.brand)}</div>
+        <div class="pbody">
+          <div class="brand">${esc(p.brand)} <span class="tag">庫存 ${p.stock}</span></div>
+          <div class="name">${esc(p.name)}</div>
+          <div class="spec">${esc(p.spec)}</div>
+          <div class="price">${fmt(p.price)}<small>一次付清</small></div>
+          <div class="actions">
+            <button class="btn btn-shop" type="button" data-buy="${p.id}">立即購買</button>
+            <button class="btn btn-maju" type="button" data-maju="${p.id}">MAJU 分期付款<b>0 利率・每月最低繳 NT$3,000・免信用卡</b></button>
+          </div>
+          <div class="toast" data-toast="${p.id}"></div>
+        </div>`;
+      grid.appendChild(el);
+    }
+    grid.addEventListener('click', (e) => {
+      const buy = e.target.closest('[data-buy]');
+      const maju = e.target.closest('[data-maju]');
+      if (buy) { const t = grid.querySelector(`[data-toast="${buy.dataset.buy}"]`); t.textContent = '這裡走 XMART GO 自己的結帳流程（示範未實作）'; setTimeout(() => { t.textContent = ''; }, 2500); }
+      if (maju) goCheckout(maju.dataset.maju);
+    });
+  }
+
+  renderShop();
+  MajuUI.init({ api, memberId: 'm_vip3', onBack: goShop });
+  route();
+})();
 </script>
 </body>
 </html>
