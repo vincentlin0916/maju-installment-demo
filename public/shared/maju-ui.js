@@ -2,7 +2,7 @@
 // 這裡只負責顯示：售價、額度、資格與繳款試算都由 api 回傳，前端不自行計價。
 // api 介面（皆為 async，失敗時 throw Error）：
 //   members() / quote(productId, memberId) / createOrder(productId, memberId, buyer) / cancelOrder(orderId)
-//   applyOverLimit(productId, memberId, buyer) / reviewOverLimit(requestId, approve)
+//   applyReview(productId, memberId, buyer) / decideReview(requestId, approve)
 (function (root) {
   const $ = (id) => document.getElementById(id);
   const fmt = (n) => 'NT$ ' + Number(n).toLocaleString('zh-TW');
@@ -43,6 +43,7 @@
     $('cOut').textContent = fmt(m.outstanding);
     $('cRes').textContent = fmt(m.reserved);
     $('cAvail').textContent = fmt(m.available);
+    $('cArc').textContent = m.arcExpiry || '未登錄';
     const pct = (v) => Math.min(100, (v / m.baseLimit) * 100) + '%';
     $('barUsed').style.width = pct(m.outstanding);
     $('barRes').style.width = pct(m.reserved);
@@ -53,6 +54,8 @@
     if (e.ok && e.warning) b.innerHTML = `<b>帳款逾期提醒</b>${esc(e.warning)}`;
     else if (!e.ok && e.code === 'insufficient_credit') {
       b.innerHTML = `<b>可用額度不足</b>MAJU 商城售價 ${fmt(price)}，可用額度 ${fmt(m.available)}，差額 ${fmt(e.shortfall)}。${esc(e.overLimit.message)}`;
+    } else if (!e.ok && e.code === 'stay_period') {
+      b.innerHTML = `<b>${e.review.canApply ? '這筆訂單需要人工審核' : '目前無法成立訂單'}</b>${esc(e.message)}`;
     } else if (!e.ok) b.innerHTML = `<b>目前無法進行新交易</b>${esc(e.reason)}`;
   }
 
@@ -91,8 +94,8 @@
     $('schedule').innerHTML = scheduleRows(r);
     const btn = $('submitBtn');
     if (e.ok) { btn.disabled = false; btn.dataset.mode = 'order'; btn.textContent = '確認交易'; }
-    else if (e.code === 'insufficient_credit' && e.overLimit.canApply) { btn.disabled = false; btn.dataset.mode = 'apply'; btn.textContent = '申請人工審核'; }
-    else { btn.disabled = true; btn.dataset.mode = ''; btn.textContent = e.code === 'insufficient_credit' ? '額度不足，無法交易' : '暫停新交易'; }
+    else if (e.review && e.review.canApply) { btn.disabled = false; btn.dataset.mode = 'apply'; btn.textContent = '申請人工審核'; }
+    else { btn.disabled = true; btn.dataset.mode = ''; btn.textContent = e.code === 'insufficient_credit' ? '額度不足，無法交易' : e.code === 'stay_period' ? '無法成立訂單' : '暫停新交易'; }
   }
 
   async function load(productId, memberId) {
@@ -129,7 +132,7 @@
     btn.textContent = mode === 'apply' ? '送出申請中…' : '建立訂單中…';
     try {
       if (mode === 'apply') {
-        const { request } = await api.applyOverLimit(state.productId, state.memberId, buyer);
+        const { request } = await api.applyReview(state.productId, state.memberId, buyer);
         state.request = request;
         renderPending();
         show('pendingView');
@@ -151,8 +154,13 @@
     const r = state.request;
     $('reqTitle').textContent = '已送出人工審核申請';
     $('reqId').textContent = r.requestId;
-    $('reqSummary').textContent = `${r.productName}　MAJU 商城售價 ${fmt(r.majuPrice)}。成立後帳款 ${fmt(r.balanceAfter)}，其中等級額度 ${fmt(r.levelLimit)}、申請臨時額度 ${fmt(r.extra)}。`;
-    $('reqNote').textContent = `訂單尚未成立，額度也還沒有保留。審核結果會以簡訊通知 ${r.phone}。核准後，多出的 ${fmt(r.extra)} 是臨時額度，要先償還：每月至少繳 ${fmt(state.quote.settings.minMonthlyPayment)}，約 ${r.payoffMonths} 個月還到等級額度以內。`;
+    const temp = r.reasons.includes('temp_limit'), stay = r.reasons.includes('stay_period');
+    $('reqSummary').textContent = `${r.productName}　MAJU 商城售價 ${fmt(r.majuPrice)}。成立後帳款 ${fmt(r.balanceAfter)}`
+      + (temp ? `，其中等級額度 ${fmt(r.levelLimit)}、申請臨時額度 ${fmt(r.extra)}。` : '。')
+      + (stay ? `只繳最低應繳預估 ${r.stay.lastDueDate} 繳清，晚於居留期限 ${r.stay.arcExpiry}。` : '');
+    $('reqNote').textContent = `訂單尚未成立，額度也還沒有保留。審核結果會以簡訊通知 ${r.phone}。`
+      + (temp ? `核准後，多出的 ${fmt(r.extra)} 是臨時額度，要先償還：每月至少繳 ${fmt(state.quote.settings.minMonthlyPayment)}，約 ${r.payoffMonths} 個月還到等級額度以內。` : '')
+      + (stay ? '審核人員可能會請您提供續聘或展延證明，或約定較高的每月繳款金額。' : '');
     $('approveBtn').hidden = false; $('rejectBtn').hidden = false;
     $('reqMsg').textContent = '';
   }
@@ -162,7 +170,7 @@
     if (!r) return;
     $('approveBtn').disabled = true; $('rejectBtn').disabled = true;
     try {
-      const data = await api.reviewOverLimit(r.requestId, approve);
+      const data = await api.decideReview(r.requestId, approve);
       if (approve) {
         state.order = data.order;
         renderDone();
@@ -184,7 +192,7 @@
   function renderDone() {
     const o = state.order, c = o.creditAfter, r = o.repayment;
     const balance = c.outstanding + c.reserved;
-    $('doneTitle').textContent = o.overLimit ? '人工審核已核准，訂單已建立' : '訂單已建立，額度已保留';
+    $('doneTitle').textContent = o.review ? '人工審核已核准，訂單已建立' : '訂單已建立，額度已保留';
     $('doneOrderId').textContent = o.orderId;
     $('doneSummary').textContent = `${o.product.name}　MAJU 商城售價 ${fmt(o.priceSnapshot.majuPrice)}。每月最低應繳 ${fmt(r.minPayment)}，只繳最低應繳約 ${r.estimatedMonths} 個月繳清。`;
     $('doneCredit').textContent = (balance > c.baseLimit

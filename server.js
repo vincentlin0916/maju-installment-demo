@@ -5,7 +5,7 @@
 //   1. 模擬「合作電商（XMART GO）」的商品 API（/partner-api/...）
 //   2. MAJU 後端：即時呼叫合作電商 API 取得商品 → 依會員計算 MAJU 售價、額度與繳款試算（/api/quote）
 //   3. 額度足夠：建立訂單並保留額度（/api/orders）
-//      額度不足：單筆訂單人工審核申請（/api/over-limit-requests）
+//      額度不足或預估繳清日晚於居留期限：單筆訂單人工審核申請（/api/review-requests）
 //   4. 靜態頁面：/partner/（XMART GO 示範頁）、/maju/checkout（MAJU 確認頁）
 //
 // 計價、額度、逾期與繳款規則都在 lib/core.js（不放在 public/，顧客端拿不到計算方式）。
@@ -116,15 +116,15 @@ async function handleApi(req, res, url) {
   m = url.pathname.match(/^\/api\/orders\/([^/]+)\/cancel$/);
   if (m && req.method === 'POST') return send(res, store.cancelOrder(m[1]));
 
-  // ---- MAJU：額度不足，單筆訂單人工審核申請 ---------------------------------
-  if (url.pathname === '/api/over-limit-requests' && req.method === 'POST') {
+  // ---- MAJU：額度不足或超過居留期限，單筆訂單人工審核申請 ---------------------
+  if (url.pathname === '/api/review-requests' && req.method === 'POST') {
     const p = await loadPurchase(req, res);
     if (!p) return;
-    return send(res, store.applyOverLimit(p.merchant, p.product, p.memberId, p.buyer));
+    return send(res, store.applyReview(p.merchant, p.product, p.memberId, p.buyer));
   }
   // 後台審核結果（原型以示範按鈕呼叫；正式環境在管理後台，需員工登入與權限）
-  m = url.pathname.match(/^\/api\/over-limit-requests\/([^/]+)\/(approve|reject)$/);
-  if (m && req.method === 'POST') return send(res, store.reviewOverLimit(m[1], m[2] === 'approve'));
+  m = url.pathname.match(/^\/api\/review-requests\/([^/]+)\/(approve|reject)$/);
+  if (m && req.method === 'POST') return send(res, store.decideReview(m[1], m[2] === 'approve'));
 
   return sendJson(res, 404, { error: 'not found' });
 }

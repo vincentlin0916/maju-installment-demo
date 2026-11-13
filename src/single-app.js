@@ -20,8 +20,8 @@
     // 下單與申請都重新向合作商城取價並重算，不信任畫面上的金額
     createOrder: async (pid, mid, buyer) => unwrap(store.createOrder(MERCHANT, await fetchPartnerProduct(pid), mid, buyer)),
     cancelOrder: async (orderId) => unwrap(store.cancelOrder(orderId)),
-    applyOverLimit: async (pid, mid, buyer) => unwrap(store.applyOverLimit(MERCHANT, await fetchPartnerProduct(pid), mid, buyer)),
-    reviewOverLimit: async (requestId, approve) => unwrap(store.reviewOverLimit(requestId, approve)),
+    applyReview: async (pid, mid, buyer) => unwrap(store.applyReview(MERCHANT, await fetchPartnerProduct(pid), mid, buyer)),
+    decideReview: async (requestId, approve) => unwrap(store.decideReview(requestId, approve)),
   };
 
   let productId = null;

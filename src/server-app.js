@@ -9,8 +9,8 @@
     quote: (pid, mid) => fetch('/api/quote?' + new URLSearchParams({ merchant: merchant || '', product_id: pid, member: mid })).then(j),
     createOrder: (pid, mid, buyer) => post('/api/orders', { merchant, productId: pid, member: mid, buyer }),
     cancelOrder: (orderId) => post(`/api/orders/${encodeURIComponent(orderId)}/cancel`),
-    applyOverLimit: (pid, mid, buyer) => post('/api/over-limit-requests', { merchant, productId: pid, member: mid, buyer }),
-    reviewOverLimit: (requestId, approve) => post(`/api/over-limit-requests/${encodeURIComponent(requestId)}/${approve ? 'approve' : 'reject'}`),
+    applyReview: (pid, mid, buyer) => post('/api/review-requests', { merchant, productId: pid, member: mid, buyer }),
+    decideReview: (requestId, approve) => post(`/api/review-requests/${encodeURIComponent(requestId)}/${approve ? 'approve' : 'reject'}`),
   };
   MajuUI.init({
     api,
